@@ -154,6 +154,8 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
     }
 
     public void tickServer() {
+        ritualExecutor.tick();
+
         if (slownessCooldown > 0) slownessCooldown--;
 
         if (slownessCooldown == 0 && this.getItem() != null) {
@@ -168,8 +170,6 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
             slownessCooldown = 30 * 20;
             this.markDirty();
         }
-
-        ritualExecutor.tick();
     }
 
     //Actual Logic
