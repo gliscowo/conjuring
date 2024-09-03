@@ -11,11 +11,13 @@ import com.mojang.serialization.JsonOps;
 import io.wispforest.owo.Owo;
 import io.wispforest.owo.blockentity.LinearProcess;
 import io.wispforest.owo.blockentity.LinearProcessExecutor;
+import io.wispforest.owo.ops.ItemOps;
 import io.wispforest.owo.ops.WorldOps;
 import io.wispforest.owo.particles.ClientParticles;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
@@ -38,6 +40,7 @@ import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -100,11 +103,11 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
 
     //Data Logic
     @Override
-    public void writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
-        NbtCompound item = new NbtCompound();
-        if (!this.item.isEmpty()) this.item.writeNbt(item);
-        tag.put("Item", item);
+    public void writeNbt(NbtCompound tag, RegistryWrapper.WrapperLookup lookup) {
+        super.writeNbt(tag, lookup);
+
+        ItemOps.store(lookup, this.item, tag, "Item");
+
         tag.putInt("Cooldown", slownessCooldown);
 
         if (ritualExecutor.running()) {
@@ -120,19 +123,17 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
     }
 
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
+    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+        super.readNbt(nbt, registryLookup);
 
-        NbtCompound item = tag.getCompound("Item");
-        this.item = ItemStack.EMPTY;
-        if (!item.isEmpty()) this.item = ItemStack.fromNbt(tag.getCompound("Item"));
+        this.item = ItemOps.get(registryLookup, nbt, "Item");
 
-        loadPedestals(tag, pedestalPositions);
+        loadPedestals(nbt, pedestalPositions);
 
-        slownessCooldown = tag.getInt("Cooldown");
+        slownessCooldown = nbt.getInt("Cooldown");
 
-        if (tag.contains("Ritual")) {
-            NbtCompound ritual = tag.getCompound("Ritual");
+        if (nbt.contains("Ritual")) {
+            NbtCompound ritual = nbt.getCompound("Ritual");
             ritualEntity = ritual.getUuid("Entity");
             particleOffset = ritual.getFloat("ParticleOffset");
             ritualStability = ritual.getFloat("Stability");
@@ -193,7 +194,7 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
         if (e instanceof ItemEntity item && item.getStack().isOf(ConjuringItems.DISTILLED_SPIRIT) && this.item != null) {
             if (world.isClient) return true;
 
-            final MobEntity newEntity = (MobEntity) EntityType.loadEntityWithPassengers(this.item.getNbt().getCompound("Entity"), world, Function.identity());
+            final MobEntity newEntity = (MobEntity) EntityType.loadEntityWithPassengers(this.item.getOrDefault(ConjuringFocus.ENTITY, NbtComponent.DEFAULT).getNbt(), world, Function.identity());
             if (newEntity == null) return false;
 
             final var health = newEntity.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH);
@@ -221,7 +222,7 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
             return false;
         }
 
-        if (item.getOrCreateNbt().contains("Entity")) return false;
+        if (item.contains(ConjuringFocus.ENTITY)) return false;
 
         if (!world.isClient()) {
             ritualExecutor.begin();
@@ -290,7 +291,7 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
     public void calculateStability() {
         if (world.getBiome(pos).getKey().orElse(null) == BiomeKeys.SOUL_SAND_VALLEY) {ritualStability += .1f;}
 
-        var drops = extractDrops(world.getServer().getLootManager().getLootTable(((MobEntity) ((ServerWorld) world).getEntity(ritualEntity)).getLootTable()));
+        var drops = extractDrops(world.getServer().getReloadableRegistries().getLootTable(((MobEntity) ((ServerWorld) world).getEntity(ritualEntity)).getLootTable()));
 
         for (var pedestalPos : pedestalPositions) {
             if (!(world.getBlockEntity(pedestalPos) instanceof BlackstonePedestalBlockEntity pedestal)) continue;
@@ -315,8 +316,8 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
         ritualExecutor.cancel();
     }
 
-    private static List<Item> extractDrops(LootTable table) {
-        var tableObject = (JsonObject) LootTable.CODEC.encodeStart(JsonOps.INSTANCE, table).result().get();
+    private List<Item> extractDrops(LootTable table) {
+        var tableObject = (JsonObject) LootTable.CODEC.encodeStart(this.world.getRegistryManager().getOps(JsonOps.INSTANCE), table).result().get();
         var extractedDrops = new ArrayList<Item>();
 
         try {
@@ -327,7 +328,7 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
                     JsonObject entryObject = entryElement.getAsJsonObject();
                     if (!"minecraft:item".equals(JsonHelper.getString(entryObject, "type"))) continue;
 
-                    extractedDrops.add(Registries.ITEM.get(new Identifier(JsonHelper.getString(entryObject, "name"))));
+                    extractedDrops.add(Registries.ITEM.get(Identifier.of(JsonHelper.getString(entryObject, "name"))));
                 }
             }
 
@@ -345,9 +346,9 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt() {
+    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registryLookup) {
         var tag = new NbtCompound();
-        this.writeNbt(tag);
+        this.writeNbt(tag, registryLookup);
         return tag;
     }
 
@@ -395,7 +396,7 @@ public class SoulFunnelBlockEntity extends BlockEntity implements RitualCore {
             funnel.particleOffset = targetEntity.getHeight() / 2;
             funnel.markDirty();
 
-            targetEntity.teleport(funnel.pos.getX() + 0.5f, targetEntity.getY(), funnel.pos.getZ() + 0.5f);
+            targetEntity.teleport(funnel.pos.getX() + 0.5f, targetEntity.getY(), funnel.pos.getZ() + 0.5f, false);
             targetEntity.setVelocity(0, 0.075f, 0);
             targetEntity.setNoGravity(true);
             funnel.calculateStability();

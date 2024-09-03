@@ -11,11 +11,13 @@ import com.glisco.conjuring.entities.*;
 import com.glisco.conjuring.items.ConjuringItems;
 import com.glisco.conjuring.items.soul_alloy_tools.BlockCrawler;
 import com.glisco.conjuring.items.soul_alloy_tools.ChangeToolModePacket;
+import com.glisco.conjuring.items.soul_alloy_tools.SoulAlloyTool;
 import com.glisco.conjuring.items.soul_alloy_tools.SoulAlloyToolAbilities;
 import com.glisco.conjuring.util.*;
 import io.wispforest.owo.Owo;
 import io.wispforest.owo.itemgroup.Icon;
 import io.wispforest.owo.itemgroup.OwoItemGroup;
+import io.wispforest.owo.network.OwoNetChannel;
 import io.wispforest.owo.ops.LootOps;
 import io.wispforest.owo.registration.reflect.FieldRegistrationHandler;
 import net.fabricmc.api.ModInitializer;
@@ -37,13 +39,20 @@ import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.function.ApplyBonusLootFunction;
 import net.minecraft.predicate.NumberRange;
 import net.minecraft.predicate.item.EnchantmentPredicate;
+import net.minecraft.predicate.item.EnchantmentsPredicate;
 import net.minecraft.predicate.item.ItemPredicate;
+import net.minecraft.predicate.item.ItemSubPredicateTypes;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.resource.featuretoggle.FeatureFlags;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.sound.SoundEvent;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
+
+import java.util.List;
 
 public class Conjuring implements ModInitializer {
 
@@ -74,6 +83,8 @@ public class Conjuring implements ModInitializer {
     public static final ExtractionRitualCriterion EXTRACTION_RITUAL_CRITERION = new ExtractionRitualCriterion();
     public static final GemTinkeringCriterion GEM_TINKERING_CRITERION = new GemTinkeringCriterion();
 
+    public static final OwoNetChannel CHANNEL = OwoNetChannel.create(id("channel"));
+
     @Override
     public void onInitialize() {
 
@@ -103,23 +114,38 @@ public class Conjuring implements ModInitializer {
         CONJURING_GROUP.initialize();
 
         ServerTickEvents.END_WORLD_TICK.register(BlockCrawler::tick);
-        ServerPlayNetworking.registerGlobalReceiver(ChangeToolModePacket.ID, ChangeToolModePacket::onPacket);
+        CHANNEL.registerServerbound(ChangeToolModePacket.class, (message, access) -> {
+            var player = access.player();
+
+            if (!player.isSneaking()) return;
+            if (!(player.getMainHandStack().getItem() instanceof SoulAlloyTool)) return;
+            SoulAlloyTool.toggleEnabledState(player.getMainHandStack());
+            player.playSound(SoulAlloyTool.isSecondaryEnabled(player.getMainHandStack()) ? SoundEvents.BLOCK_RESPAWN_ANCHOR_SET_SPAWN : SoundEvents.BLOCK_RESPAWN_ANCHOR_DEPLETE.value(), 1, 1.5f + player.getWorld().random.nextFloat() * 0.5f);
+        });
 
         Registry.register(Registries.SOUND_EVENT, Conjuring.id("block.soul_weaver.weee"), WEEE);
 
-        final var spawnerLootTableId = new Identifier("blocks/spawner");
-        LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
-            if (!spawnerLootTableId.equals(id)) return;
+        final var spawnerLootTableId = Identifier.of("blocks/spawner");
+        LootTableEvents.MODIFY.register((key, tableBuilder, source) -> {
+            if (!spawnerLootTableId.equals(key.getValue())) return;
+
+
+            var server = Owo.currentServer();
+            if (server == null) return;
+
+            var wrapper = server.getRegistryManager().getWrapperOrThrow(RegistryKeys.ENCHANTMENT);
 
             var itemEntry = ItemEntry.builder(ConjuringItems.CONJURATION_ESSENCE);
             if (CONFIG.conjurer_config.fortuneEnabled()) {
-                itemEntry.apply(ApplyBonusLootFunction.oreDrops(Enchantments.FORTUNE));
+                itemEntry.apply(ApplyBonusLootFunction.oreDrops(wrapper.getOrThrow(Enchantments.FORTUNE)));
             }
 
             if (CONFIG.conjurer_config.respectSilkTouch()) {
                 itemEntry.conditionally(InvertedLootCondition.builder(
-                        MatchToolLootCondition.builder(ItemPredicate.Builder.create().enchantment(
-                                new EnchantmentPredicate(Enchantments.SILK_TOUCH, NumberRange.IntRange.atLeast(1))
+                        MatchToolLootCondition.builder(ItemPredicate.Builder.create().subPredicate(
+                                ItemSubPredicateTypes.ENCHANTMENTS, EnchantmentsPredicate.enchantments(
+                                        List.of(new EnchantmentPredicate(wrapper.getOrThrow(Enchantments.SILK_TOUCH), NumberRange.IntRange.atLeast(1)))
+                                )
                         )))
                 );
             }
@@ -128,10 +154,10 @@ public class Conjuring implements ModInitializer {
         });
 
 
-        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .35f, LootTables.SIMPLE_DUNGEON_CHEST);
-        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .175f, LootTables.BASTION_TREASURE_CHEST);
-        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .2f, LootTables.DESERT_PYRAMID_CHEST, LootTables.STRONGHOLD_CORRIDOR_CHEST);
-        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .05f, LootTables.STRONGHOLD_LIBRARY_CHEST);
+        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .35f, LootTables.SIMPLE_DUNGEON_CHEST.getValue());
+        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .175f, LootTables.BASTION_TREASURE_CHEST.getValue());
+        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .2f, LootTables.DESERT_PYRAMID_CHEST.getValue(), LootTables.STRONGHOLD_CORRIDOR_CHEST.getValue());
+        LootOps.injectItem(ConjuringItems.CONJURATION_ESSENCE, .05f, LootTables.STRONGHOLD_LIBRARY_CHEST.getValue());
 
         Criteria.register("conjuring:extraction_ritual", EXTRACTION_RITUAL_CRITERION);
         Criteria.register("conjuring:gem_tinkering", GEM_TINKERING_CRITERION);
@@ -145,6 +171,6 @@ public class Conjuring implements ModInitializer {
     }
 
     public static Identifier id(String path) {
-        return new Identifier(MOD_ID, path);
+        return Identifier.of(MOD_ID, path);
     }
 }

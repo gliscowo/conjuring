@@ -23,7 +23,7 @@ public class ConjurerHelper {
         ItemStack ignoranceCharms = conjurer.getStack(4);
 
         if (focus.getItem() instanceof ConjuringFocus) {
-            MobSpawnerEntry entry = new MobSpawnerEntry(focus.getNbt().getCompound("Entity"), Optional.empty());
+            MobSpawnerEntry entry = new MobSpawnerEntry(focus.get(ConjuringFocus.ENTITY).copyNbt(), Optional.empty(), Optional.empty());
 
             conjurer.getLogic().setEnty(entry);
             conjurer.getLogic().setSpawnEntry(conjurer.getWorld(), conjurer.getPos(), entry);

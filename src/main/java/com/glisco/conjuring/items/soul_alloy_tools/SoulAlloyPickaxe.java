@@ -4,10 +4,11 @@ import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.entities.SoulDiggerEntity;
 import com.glisco.conjuring.items.ConjuringItems;
 import io.wispforest.owo.itemgroup.OwoItemSettings;
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.PickaxeItem;
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Rarity;
@@ -20,7 +21,8 @@ import java.util.List;
 public class SoulAlloyPickaxe extends PickaxeItem implements SoulAlloyTool {
 
     public SoulAlloyPickaxe() {
-        super(SoulAlloyToolMaterial.INSTANCE, 1, -2.8f, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON));
+        super(SoulAlloyToolMaterial.INSTANCE, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON)
+                .attributeModifiers(createAttributeModifiers(SoulAlloyToolMaterial.INSTANCE, 1, -2.8f)));
     }
 
     @Override
@@ -38,7 +40,7 @@ public class SoulAlloyPickaxe extends PickaxeItem implements SoulAlloyTool {
             world.spawnEntity(digger);
 
             user.getItemCooldownManager().set(ConjuringItems.SOUL_ALLOY_PICKAXE, Conjuring.CONFIG.tools_config.pickaxe_secondary_cooldown());
-            user.getStackInHand(hand).damage(Conjuring.CONFIG.tools_config.pickaxe_secondary_durability_cost(), user, player -> player.sendToolBreakStatus(hand));
+            user.getStackInHand(hand).damage(Conjuring.CONFIG.tools_config.pickaxe_secondary_durability_cost(), user, LivingEntity.getSlotForHand(hand));
         }
 
         return TypedActionResult.success(user.getStackInHand(hand));
@@ -57,7 +59,7 @@ public class SoulAlloyPickaxe extends PickaxeItem implements SoulAlloyTool {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
         tooltip.addAll(SoulAlloyTool.getTooltip(stack));
     }
 
@@ -65,5 +67,4 @@ public class SoulAlloyPickaxe extends PickaxeItem implements SoulAlloyTool {
     public boolean canAoeDig() {
         return true;
     }
-
 }

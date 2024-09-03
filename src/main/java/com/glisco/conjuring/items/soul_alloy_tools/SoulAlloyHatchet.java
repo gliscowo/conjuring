@@ -4,25 +4,26 @@ import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.entities.SoulFellerEntity;
 import com.glisco.conjuring.items.ConjuringItems;
 import io.wispforest.owo.itemgroup.OwoItemSettings;
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.AxeItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Rarity;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class SoulAlloyHatchet extends AxeItem implements SoulAlloyTool {
 
     public SoulAlloyHatchet() {
-        super(SoulAlloyToolMaterial.INSTANCE, 5.0f, -3.0f, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON));
+        super(SoulAlloyToolMaterial.INSTANCE, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON));
     }
 
     @Override
@@ -54,7 +55,11 @@ public class SoulAlloyHatchet extends AxeItem implements SoulAlloyTool {
             world.spawnEntity(feller);
 
             user.getItemCooldownManager().set(ConjuringItems.SOUL_ALLOY_HATCHET, Conjuring.CONFIG.tools_config.axe_secondary_cooldown());
-            user.getStackInHand(hand).damage(Conjuring.CONFIG.tools_config.axe_secondary_base_durability_cost() + Conjuring.CONFIG.tools_config.axe_secondary_per_scope_durability_cost() * scopeGems, user, player -> player.sendToolBreakStatus(hand));
+            user.getStackInHand(hand).damage(
+                    Conjuring.CONFIG.tools_config.axe_secondary_base_durability_cost() + Conjuring.CONFIG.tools_config.axe_secondary_per_scope_durability_cost() * scopeGems,
+                    user,
+                    LivingEntity.getSlotForHand(hand)
+            );
 
         }
         return TypedActionResult.success(user.getStackInHand(hand));
@@ -73,8 +78,7 @@ public class SoulAlloyHatchet extends AxeItem implements SoulAlloyTool {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
         tooltip.addAll(SoulAlloyTool.getTooltip(stack));
     }
-
 }

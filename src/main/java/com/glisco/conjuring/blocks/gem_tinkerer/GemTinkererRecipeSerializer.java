@@ -1,69 +1,41 @@
 package com.glisco.conjuring.blocks.gem_tinkerer;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonParseException;
+import io.wispforest.endec.StructEndec;
+import io.wispforest.endec.impl.StructEndecBuilder;
+import io.wispforest.owo.serialization.CodecUtils;
+import io.wispforest.owo.serialization.EndecRecipeSerializer;
+import io.wispforest.owo.serialization.endec.MinecraftEndecs;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.dynamic.Codecs;
 
 import java.util.List;
 
-public class GemTinkererRecipeSerializer implements RecipeSerializer<GemTinkererRecipe> {
+public class GemTinkererRecipeSerializer extends EndecRecipeSerializer<GemTinkererRecipe> {
+
+    public static final StructEndec<GemTinkererRecipe> ENDEC = StructEndecBuilder.of(
+            MinecraftEndecs.ITEM_STACK.fieldOf("result", o -> o.getResult(null)),
+            CodecUtils.toEndec(Ingredient.DISALLOW_EMPTY_CODEC).listOf().validate(ingredients -> {
+                if (ingredients.size() > 5) {
+                    throw new JsonParseException("Gem tinkerer recipes cannot have more than 5 inputs");
+                }
+            }).fieldOf("inputs", GemTinkererRecipe::getInputs),
+            (stack, ingredients) -> {
+                var inputs = DefaultedList.ofSize(5, Ingredient.EMPTY);
+                for (int i = 0; i < ingredients.size(); i++) {
+                    inputs.set(i, ingredients.get(i));
+                }
+
+                return new GemTinkererRecipe(stack, inputs);
+            }
+    );
 
     private GemTinkererRecipeSerializer() {
+        super(ENDEC);
     }
 
     public static final GemTinkererRecipeSerializer INSTANCE = new GemTinkererRecipeSerializer();
     public static final Identifier ID = GemTinkererRecipe.Type.ID;
-
-    public static final Codec<GemTinkererRecipe> CODEC = RecordCodecBuilder.create(instance -> {
-        return instance.group(
-                ItemStack.RECIPE_RESULT_CODEC.fieldOf("result").forGetter(o -> ItemStack.EMPTY),
-                Codecs.validate(Ingredient.DISALLOW_EMPTY_CODEC.listOf(), ingredients -> {
-                    if (ingredients.size() <= 5) {
-                        return DataResult.success(ingredients);
-                    } else {
-                        return DataResult.error(() -> "Gem tinkerer recipes cannot have more than 5 inputs");
-                    }
-                }).fieldOf("inputs").forGetter(o -> List.of())
-        ).apply(instance, (stack, ingredients) -> {
-            var inputs = DefaultedList.ofSize(5, Ingredient.EMPTY);
-            for (int i = 0; i < ingredients.size(); i++) {
-                inputs.set(i, ingredients.get(i));
-            }
-
-            return new GemTinkererRecipe(stack, inputs);
-        });
-    });
-
-    @Override
-    public Codec<GemTinkererRecipe> codec() {
-        return CODEC;
-    }
-
-    @Override
-    public GemTinkererRecipe read(PacketByteBuf buf) {
-        ItemStack result = buf.readItemStack();
-
-        var inputs = DefaultedList.ofSize(5, Ingredient.EMPTY);
-        for (int i = 0; i < 5; i++) {
-            inputs.set(i, Ingredient.fromPacket(buf));
-        }
-
-        return new GemTinkererRecipe(result, inputs);
-    }
-
-    @Override
-    public void write(PacketByteBuf buf, GemTinkererRecipe recipe) {
-        buf.writeItemStack(recipe.getResult(null));
-
-        for (Ingredient ingredient : recipe.getInputs()) {
-            ingredient.write(buf);
-        }
-    }
 }

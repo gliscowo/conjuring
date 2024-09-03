@@ -3,6 +3,7 @@ package com.glisco.conjuring.entities;
 import com.glisco.conjuring.Conjuring;
 import io.wispforest.owo.particles.ClientParticles;
 import net.minecraft.entity.*;
+import net.minecraft.entity.data.DataTracker;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.util.math.Box;
@@ -27,9 +28,7 @@ public class SoulMagnetEntity extends SoulEntity {
     }
 
     @Override
-    protected void initDataTracker() {
-
-    }
+    protected void initDataTracker(DataTracker.Builder builder) {}
 
     @Override
     public void tick() {

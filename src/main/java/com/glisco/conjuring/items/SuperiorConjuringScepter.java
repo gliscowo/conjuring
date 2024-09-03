@@ -63,7 +63,7 @@ public class SuperiorConjuringScepter extends ConjuringScepter {
             projectile.setVelocity(user, user.getPitch(), user.getYaw(), 0f, 1.5f, 1);
             world.spawnEntity(projectile);
 
-            world.playSound(null, user.getBlockPos(), SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.PLAYERS, 2, 1);
+            world.playSound(null, user.getBlockPos(), SoundEvents.PARTICLE_SOUL_ESCAPE.value(), SoundCategory.PLAYERS, 2, 1);
         }
 
         if (!((PlayerEntity) user).getAbilities().creativeMode) {
@@ -77,7 +77,7 @@ public class SuperiorConjuringScepter extends ConjuringScepter {
     }
 
     @Override
-    public int getMaxUseTime(ItemStack stack) {
+    public int getMaxUseTime(ItemStack stack, LivingEntity user) {
         return 72000;
     }
 }

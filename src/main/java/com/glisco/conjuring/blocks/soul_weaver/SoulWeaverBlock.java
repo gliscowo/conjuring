@@ -15,6 +15,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
@@ -71,11 +72,13 @@ public class SoulWeaverBlock extends BlockWithEntity {
         return SHAPE;
     }
 
-    @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        SoulWeaverBlockEntity weaver = (SoulWeaverBlockEntity) world.getBlockEntity(pos);
 
-        if (weaver.isRunning()) return ActionResult.PASS;
+    @Override
+    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        if (stack.isEmpty()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
+        SoulWeaverBlockEntity weaver = (SoulWeaverBlockEntity) world.getBlockEntity(pos);
+        if (weaver.isRunning()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         final ItemStack playerStack = player.getStackInHand(hand);
         final ItemStack weaverItem = weaver.getItem();
@@ -83,32 +86,45 @@ public class SoulWeaverBlock extends BlockWithEntity {
         if (playerStack.getItem().equals(ConjuringItems.CONJURATION_ESSENCE) && !weaver.isLit()) {
             weaver.setLit(true);
             if (!ItemOps.emptyAwareDecrement(playerStack)) player.setStackInHand(hand, ItemStack.EMPTY);
-            return ActionResult.SUCCESS;
+            return ItemActionResult.SUCCESS;
         }
 
         if (playerStack.getItem() instanceof ConjuringScepter) {
             weaver.tryStartRitual(player);
-            return ActionResult.SUCCESS;
+            return ItemActionResult.SUCCESS;
         }
 
         if (weaverItem.isEmpty()) {
-            if (playerStack.isEmpty()) return ActionResult.PASS;
-
             weaver.setItem(ItemOps.singleCopy(playerStack));
-
             ItemOps.decrementPlayerHandItem(player, hand);
         } else if (!world.isClient) {
-            if (playerStack.isEmpty()) {
-                player.setStackInHand(hand, weaverItem);
-            } else if (ItemOps.canStack(playerStack, weaverItem)) {
+            if (ItemOps.canStack(playerStack, weaverItem)) {
                 playerStack.increment(1);
             } else {
                 ItemScatterer.spawn(world, pos.getX(), pos.getY() + 1f, pos.getZ(), weaverItem);
             }
+
             weaver.setItem(ItemStack.EMPTY);
         }
 
-        return ActionResult.SUCCESS;
+        return ItemActionResult.SUCCESS;
+    }
+
+    @Override
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+        SoulWeaverBlockEntity weaver = (SoulWeaverBlockEntity) world.getBlockEntity(pos);
+        if (weaver.isRunning()) return ActionResult.PASS;
+
+        final ItemStack weaverItem = weaver.getItem();
+
+        if (!weaverItem.isEmpty()) {
+            player.setStackInHand(Hand.MAIN_HAND, weaverItem);
+            weaver.setItem(ItemStack.EMPTY);
+
+            return ActionResult.SUCCESS;
+        }
+
+        return ActionResult.PASS;
     }
 
     @Nullable

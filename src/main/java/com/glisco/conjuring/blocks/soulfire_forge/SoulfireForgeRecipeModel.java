@@ -1,10 +1,15 @@
 package com.glisco.conjuring.blocks.soulfire_forge;
 
 import com.glisco.conjuring.mixin.RawShapedRecipeDataAccessor;
+import com.google.gson.JsonParseException;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.wispforest.endec.Endec;
+import io.wispforest.endec.StructEndec;
+import io.wispforest.endec.impl.StructEndecBuilder;
+import io.wispforest.owo.serialization.CodecUtils;
+import io.wispforest.owo.serialization.endec.MinecraftEndecs;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.util.dynamic.Codecs;
@@ -15,24 +20,25 @@ import java.util.Map;
 public record SoulfireForgeRecipeModel(Map<Character, Ingredient> key, List<String> pattern, int smeltTime,
                                        ItemStack result) {
 
-    public static final Codec<List<String>> PATTERN_CODEC = Codec.STRING.listOf().flatXmap(rows -> {
+    public static final Endec<List<String>> PATTERN_ENDEC = Endec.STRING.listOf().xmap(rows -> {
         if (rows.size() != 3) {
-            return DataResult.error(() -> "Invalid pattern: must have three rows");
+            throw new JsonParseException("Invalid pattern: must have three rows");
         } else {
             for (var row : rows) {
                 if (row.length() != 3) {
-                    return DataResult.error(() -> "Invalid pattern: each row must be three characters");
+                    throw new JsonParseException("Invalid pattern: each row must be three characters");
                 }
             }
 
-            return DataResult.success(rows);
+            return rows;
         }
-    }, DataResult::success);
+    }, strings -> strings);
 
-    public static final MapCodec<SoulfireForgeRecipeModel> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codecs.strictUnboundedMap(RawShapedRecipeDataAccessor.conjuring$keyEntryCodec(), Ingredient.DISALLOW_EMPTY_CODEC).fieldOf("key").forGetter(SoulfireForgeRecipeModel::key),
-            PATTERN_CODEC.fieldOf("pattern").forGetter(SoulfireForgeRecipeModel::pattern),
-            Codec.INT.fieldOf("smeltTime").forGetter(SoulfireForgeRecipeModel::smeltTime),
-            ItemStack.RECIPE_RESULT_CODEC.fieldOf("result").forGetter(SoulfireForgeRecipeModel::result)
-    ).apply(instance, SoulfireForgeRecipeModel::new));
+    public static final StructEndec<SoulfireForgeRecipeModel> ENDEC = StructEndecBuilder.of(
+            CodecUtils.toEndec(Codecs.strictUnboundedMap(RawShapedRecipeDataAccessor.conjuring$keyEntryCodec(), Ingredient.DISALLOW_EMPTY_CODEC)).fieldOf("key", SoulfireForgeRecipeModel::key),
+            PATTERN_ENDEC.fieldOf("pattern", SoulfireForgeRecipeModel::pattern),
+            Endec.INT.fieldOf("smeltTime", SoulfireForgeRecipeModel::smeltTime),
+            MinecraftEndecs.ITEM_STACK.fieldOf("result", SoulfireForgeRecipeModel::result),
+            SoulfireForgeRecipeModel::new
+    );
 }

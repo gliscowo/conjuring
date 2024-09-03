@@ -56,6 +56,6 @@ public class SoulEntityRenderer extends EntityRenderer<SoulEntity> {
 
     @Override
     public Identifier getTexture(SoulEntity entity) {
-        return new Identifier("");
+        return Identifier.of("");
     }
 }

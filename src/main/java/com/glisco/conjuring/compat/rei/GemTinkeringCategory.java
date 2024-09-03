@@ -77,7 +77,7 @@ public class GemTinkeringCategory implements DisplayCategory<GemTinkeringDisplay
 
                 float scale = (float) Math.sin(System.currentTimeMillis() / 1000d % Math.PI);
 
-                RenderSystem.getModelViewStack().multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) Math.sin(System.currentTimeMillis() / 1000d)));
+                RenderSystem.getModelViewStack().rotate(RotationAxis.POSITIVE_Y.rotationDegrees((float) Math.sin(System.currentTimeMillis() / 1000d)));
                 RenderSystem.getModelViewStack().scale(scale, scale, MathHelper.sqrt(scale));
 
                 matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((float) (System.currentTimeMillis() / 30d % 360)));

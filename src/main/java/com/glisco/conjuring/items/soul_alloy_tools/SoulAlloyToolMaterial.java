@@ -1,16 +1,17 @@
 package com.glisco.conjuring.items.soul_alloy_tools;
 
 import com.glisco.conjuring.items.ConjuringItems;
+import net.minecraft.block.Block;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.recipe.Ingredient;
+import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.TagKey;
 
 public class SoulAlloyToolMaterial implements ToolMaterial {
 
     public static final SoulAlloyToolMaterial INSTANCE = new SoulAlloyToolMaterial();
 
-    private SoulAlloyToolMaterial() {
-
-    }
+    private SoulAlloyToolMaterial() {}
 
     @Override
     public int getDurability() {
@@ -28,8 +29,8 @@ public class SoulAlloyToolMaterial implements ToolMaterial {
     }
 
     @Override
-    public int getMiningLevel() {
-        return 4;
+    public TagKey<Block> getInverseTag() {
+        return BlockTags.INCORRECT_FOR_NETHERITE_TOOL;
     }
 
     @Override

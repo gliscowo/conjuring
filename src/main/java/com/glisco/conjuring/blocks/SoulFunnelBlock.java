@@ -19,6 +19,7 @@ import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -85,13 +86,58 @@ public class SoulFunnelBlock extends BlockWithEntity {
         return BlockRenderType.MODEL;
     }
 
+    @Override
+    protected ItemActionResult onUseWithItem(ItemStack playerStack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        //Filling logic
+        if (playerStack.getItem().equals(Items.SOUL_SAND) && !state.get(FILLED)) {
+            world.setBlockState(pos, state.with(FILLED, true));
+
+            ItemOps.decrementPlayerHandItem(player, hand);
+
+
+            if (!world.isClient()) {
+                world.playSound(null, pos, SoundEvents.BLOCK_SOUL_SAND_PLACE, SoundCategory.BLOCKS, 1, 1);
+            }
+            return ItemActionResult.SUCCESS;
+        }
+
+        //Ritual logic
+        if (playerStack.getItem() instanceof ConjuringScepter) {
+
+            RitualCore core = (RitualCore) world.getBlockEntity(pos);
+            if (core.tryStartRitual(player)) return ItemActionResult.SUCCESS;
+        }
+
+        //Focus placing logic
+        if (!state.get(FILLED)) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
+        SoulFunnelBlockEntity funnel = (SoulFunnelBlockEntity) world.getBlockEntity(pos);
+        ItemStack funnelFocus = funnel.getItem();
+
+        if (funnelFocus.isEmpty()) {
+            if (!(playerStack.getItem() instanceof ConjuringFocus))
+                return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
+            if (!world.isClient()) {
+                funnel.setItem(playerStack.copy());
+                player.setStackInHand(hand, ItemStack.EMPTY);
+            }
+        } else {
+            if (!world.isClient() && !funnel.isRitualRunning()) {
+                ItemScatterer.spawn(world, pos.getX(), pos.getY() + 0.55d, pos.getZ(), funnelFocus);
+                funnel.setItem(ItemStack.EMPTY);
+            }
+        }
+
+        return ItemActionResult.SUCCESS;
+    }
+
     //Actual Logic
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
 
         //Pedestal highlighting logic
-        final ItemStack playerStack = player.getStackInHand(hand);
-        if (playerStack.isEmpty() && player.isSneaking()) {
+        if (player.isSneaking()) {
             if (!world.isClient) return ActionResult.SUCCESS;
 
             List<BlockPos> possiblePedestals = new ArrayList<>();
@@ -112,49 +158,14 @@ public class SoulFunnelBlock extends BlockWithEntity {
             return ActionResult.SUCCESS;
         }
 
-        //Filling logic
-        if (playerStack.getItem().equals(Items.SOUL_SAND) && !state.get(FILLED)) {
-            world.setBlockState(pos, state.with(FILLED, true));
-
-            ItemOps.decrementPlayerHandItem(player, hand);
-
-
-            if (!world.isClient()) {
-                world.playSound(null, pos, SoundEvents.BLOCK_SOUL_SAND_PLACE, SoundCategory.BLOCKS, 1, 1);
-            }
-            return ActionResult.SUCCESS;
-        }
-
-        //Ritual logic
-        if (playerStack.getItem() instanceof ConjuringScepter) {
-
-            RitualCore core = (RitualCore) world.getBlockEntity(pos);
-            if (core.tryStartRitual(player)) return ActionResult.SUCCESS;
-        }
-
         //Focus placing logic
         if (!state.get(FILLED)) return ActionResult.PASS;
 
         SoulFunnelBlockEntity funnel = (SoulFunnelBlockEntity) world.getBlockEntity(pos);
         ItemStack funnelFocus = funnel.getItem();
 
-        if (funnelFocus.isEmpty()) {
-            if (!(playerStack.getItem() instanceof ConjuringFocus))
-                return ActionResult.PASS;
-
-            if (!world.isClient()) {
-                funnel.setItem(playerStack.copy());
-                player.setStackInHand(hand, ItemStack.EMPTY);
-            }
-        } else {
-            if (!world.isClient() && !funnel.isRitualRunning()) {
-                if (playerStack.isEmpty()) {
-                    player.setStackInHand(hand, funnelFocus);
-                } else {
-                    ItemScatterer.spawn(world, pos.getX(), pos.getY() + 0.55d, pos.getZ(), funnelFocus);
-                }
-                funnel.setItem(ItemStack.EMPTY);
-            }
+        if (!funnelFocus.isEmpty()) {
+            player.setStackInHand(Hand.MAIN_HAND, funnelFocus);
         }
 
         return ActionResult.SUCCESS;

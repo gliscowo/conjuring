@@ -3,17 +3,22 @@ package com.glisco.conjuring.items;
 import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.blocks.BlackstonePedestalBlockEntity;
 import com.glisco.conjuring.blocks.RitualCore;
+import com.mojang.serialization.Codec;
 import io.wispforest.owo.itemgroup.OwoItemSettings;
 import io.wispforest.owo.particles.ClientParticles;
 import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.component.ComponentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleEffect;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -25,6 +30,15 @@ import org.joml.Vector3f;
 
 public class ConjuringScepter extends Item {
 
+    public static final ComponentType<BlockPos> LINKING_FROM = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Conjuring.id("conjuring_scepter_linking_from"),
+            ComponentType.<BlockPos>builder()
+                    .codec(BlockPos.CODEC)
+                    .packetCodec(BlockPos.PACKET_CODEC)
+                    .build()
+    );
+
     public ConjuringScepter(Settings settings) {
         super(settings);
     }
@@ -34,27 +48,18 @@ public class ConjuringScepter extends Item {
     }
 
     public static boolean isLinking(ItemStack scepter) {
-        return scepter.getOrCreateNbt().contains("LinkingFrom");
-    }
-
-    public static BlockPos getLinkingFrom(ItemStack scepter) {
-        int[] intPos = scepter.getOrCreateNbt().getIntArray("LinkingFrom");
-        return intPos.length == 0 ? null : new BlockPos(intPos[0], intPos[1], intPos[2]);
+        return scepter.contains(LINKING_FROM);
     }
 
     public static void startLinking(ItemStack scepter, BlockPos pedestal) {
-        NbtCompound stackTag = scepter.getOrCreateNbt();
-        stackTag.putIntArray("LinkingFrom", new int[]{pedestal.getX(), pedestal.getY(), pedestal.getZ()});
-        scepter.setNbt(stackTag);
+        scepter.set(LINKING_FROM, pedestal);
     }
 
     public static String finishLinking(World world, ItemStack scepter, BlockPos core) {
-        NbtCompound stackTag = scepter.getOrCreateNbt();
         if (!isLinking(scepter)) return "INVALID_SCEPTER";
-        BlockPos pedestal = getLinkingFrom(scepter);
+        BlockPos pedestal = scepter.get(LINKING_FROM);
 
-        stackTag.remove("LinkingFrom");
-        scepter.setNbt(stackTag);
+        scepter.remove(LINKING_FROM);
 
         if (!(world.getBlockEntity(pedestal) instanceof BlackstonePedestalBlockEntity)) return "NO_PEDESTAL";
         if (!(world.getBlockEntity(core) instanceof RitualCore)) return "NO_FUNNEL";
@@ -107,9 +112,7 @@ public class ConjuringScepter extends Item {
         if (!user.isSneaking()) return TypedActionResult.pass(scepter);
         if (!isLinking(scepter)) return TypedActionResult.pass(scepter);
 
-        NbtCompound stackTag = scepter.getOrCreateNbt();
-        stackTag.remove("LinkingFrom");
-        scepter.setNbt(stackTag);
+        scepter.remove(LINKING_FROM);
 
         return TypedActionResult.success(scepter);
     }
@@ -131,7 +134,7 @@ public class ConjuringScepter extends Item {
 
         if (!isLinking(stack)) return;
 
-        BlockPos pedestal = getLinkingFrom(stack);
+        BlockPos pedestal = stack.getOrDefault(LINKING_FROM, BlockPos.ORIGIN);
         ClientPlayerEntity player = (ClientPlayerEntity) entity;
 
         ParticleEffect particle = new DustParticleEffect(new Vector3f(1, 1, 1), 1);

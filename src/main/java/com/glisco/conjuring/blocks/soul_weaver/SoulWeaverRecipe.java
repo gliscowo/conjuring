@@ -2,6 +2,7 @@ package com.glisco.conjuring.blocks.soul_weaver;
 
 import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.blocks.ConjuringBlocks;
+import com.glisco.conjuring.util.ListRecipeInput;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.inventory.Inventory;
@@ -11,6 +12,7 @@ import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
@@ -18,7 +20,7 @@ import net.minecraft.world.World;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SoulWeaverRecipe implements Recipe<Inventory> {
+public class SoulWeaverRecipe implements Recipe<ListRecipeInput> {
 
     private final DefaultedList<Ingredient> inputs;
     private final ItemStack result;
@@ -36,11 +38,11 @@ public class SoulWeaverRecipe implements Recipe<Inventory> {
     }
 
     @Override
-    public boolean matches(Inventory inventory, World world) {
+    public boolean matches(ListRecipeInput inventory, World world) {
         List<ItemStack> testList = new ArrayList<>();
 
-        for (int i = 0; i < inventory.size(); i++) {
-            testList.add(inventory.getStack(i));
+        for (int i = 0; i < inventory.getSize(); i++) {
+            testList.add(inventory.getStackInSlot(i));
         }
 
         return inputs.stream().allMatch(ingredient -> {
@@ -56,7 +58,7 @@ public class SoulWeaverRecipe implements Recipe<Inventory> {
     }
 
     @Override
-    public ItemStack craft(Inventory inventory, DynamicRegistryManager drm) {
+    public ItemStack craft(ListRecipeInput inventory, RegistryWrapper.WrapperLookup registries) {
         return ItemStack.EMPTY;
     }
 
@@ -66,7 +68,7 @@ public class SoulWeaverRecipe implements Recipe<Inventory> {
     }
 
     @Override
-    public ItemStack getResult(DynamicRegistryManager drm) {
+    public ItemStack getResult(RegistryWrapper.WrapperLookup registries) {
         return result.copy();
     }
 

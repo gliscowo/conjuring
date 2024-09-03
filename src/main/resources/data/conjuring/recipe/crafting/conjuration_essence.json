@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "conjuring:lesser_conjuration_essence"
+    },
+    {
+      "item": "conjuring:lesser_conjuration_essence"
+    },
+    {
+      "item": "conjuring:lesser_conjuration_essence"
+    },
+    {
+      "item": "conjuring:lesser_conjuration_essence"
+    }
+  ],
+  "result": {
+    "id": "conjuring:conjuration_essence",
+    "count": 1
+  }
+}

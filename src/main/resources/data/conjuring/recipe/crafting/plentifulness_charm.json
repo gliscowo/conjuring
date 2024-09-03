@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "r",
+    "s"
+  ],
+  "key": {
+    "r": {
+      "item": "conjuring:abundance_gem"
+    },
+    "s": {
+      "item": "conjuring:gem_socket"
+    }
+  },
+  "result": {
+    "id": "conjuring:plentifulness_charm",
+    "count": 1
+  }
+}

@@ -30,7 +30,7 @@
     "rei_client": [
       "com.glisco.conjuring.compat.rei.ConjuringClientPlugin"
     ],
-    "rei_server": [
+    "rei_common": [
       "com.glisco.conjuring.compat.rei.ConjuringCommonPlugin"
     ]
   },

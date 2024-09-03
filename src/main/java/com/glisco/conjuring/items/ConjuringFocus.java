@@ -1,27 +1,35 @@
 package com.glisco.conjuring.items;
 
 import com.glisco.conjuring.Conjuring;
+import com.mojang.serialization.Codec;
 import io.wispforest.owo.itemgroup.OwoItemSettings;
-import io.wispforest.owo.serialization.endec.KeyedEndec;
-import io.wispforest.owo.serialization.format.nbt.NbtEndec;
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.component.ComponentType;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
 import net.minecraft.util.Util;
-import net.minecraft.world.World;
 
 import java.util.List;
 
 public class ConjuringFocus extends Item {
 
-    private static final KeyedEndec<NbtCompound> ENTITY_KEY = NbtEndec.COMPOUND.keyed("Entity", (NbtCompound) null);
+    public static final ComponentType<NbtComponent> ENTITY = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Conjuring.id("conjuring_focus_entity"),
+            ComponentType.<NbtComponent>builder()
+                    .codec(NbtComponent.CODEC)
+                    .packetCodec(NbtComponent.PACKET_CODEC)
+                    .build()
+    );
 
     private final boolean hasGlint;
 
@@ -31,12 +39,12 @@ public class ConjuringFocus extends Item {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, World world, List<Text> tooltip, TooltipContext context) {
-        if (!stack.has(ENTITY_KEY)) return;
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+        if (!stack.contains(ENTITY)) return;
 
         tooltip.add(Text.translatable(Util.createTranslationKey(
                 "entity",
-                Identifier.tryParse(stack.get(ENTITY_KEY).getString("id"))
+                stack.get(ENTITY).get(Codec.STRING.fieldOf("id")).result().map(Identifier::tryParse).orElse(null)
         )).formatted(Formatting.GRAY));
     }
 
@@ -44,7 +52,7 @@ public class ConjuringFocus extends Item {
         var entityTag = new NbtCompound();
         entityTag.putString("id", Registries.ENTITY_TYPE.getId(entityType).toString());
 
-        focus.put(ENTITY_KEY, entityTag);
+        focus.set(ENTITY, NbtComponent.of(entityTag));
         return focus;
     }
 

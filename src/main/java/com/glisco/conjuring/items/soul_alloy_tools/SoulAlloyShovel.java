@@ -3,26 +3,35 @@ package com.glisco.conjuring.items.soul_alloy_tools;
 import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.entities.SoulMagnetEntity;
 import io.wispforest.owo.itemgroup.OwoItemSettings;
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.component.ComponentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.ShovelItem;
+import net.minecraft.item.tooltip.TooltipType;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Rarity;
-import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.*;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.UUID;
 
 public class SoulAlloyShovel extends ShovelItem implements SoulAlloyTool {
 
+    private static final ComponentType<UUID> CURRENT_PROJECTILE = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Conjuring.id("soul_alloy_shovel_projectile"),
+            ComponentType.<UUID>builder()
+                    .codec(Uuids.INT_STREAM_CODEC)
+                    .packetCodec(Uuids.PACKET_CODEC)
+                    .build()
+    );
+
     public SoulAlloyShovel() {
-        super(SoulAlloyToolMaterial.INSTANCE, 1.5f, -3.0f, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON));
+        super(SoulAlloyToolMaterial.INSTANCE, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON));
     }
 
     @Override
@@ -41,17 +50,17 @@ public class SoulAlloyShovel extends ShovelItem implements SoulAlloyTool {
 
             ItemStack shovel = user.getStackInHand(hand);
 
-            if (shovel.getOrCreateNbt().contains("CurrentProjectile") && ((ServerWorld) world).getEntity(shovel.getOrCreateNbt().getUuid("CurrentProjectile")) != null) {
-                ((SoulMagnetEntity) ((ServerWorld) world).getEntity(shovel.getOrCreateNbt().getUuid("CurrentProjectile"))).recall();
+            if (shovel.contains(CURRENT_PROJECTILE) && ((ServerWorld) world).getEntity(shovel.get(CURRENT_PROJECTILE)) != null) {
+                ((SoulMagnetEntity) ((ServerWorld) world).getEntity(shovel.get(CURRENT_PROJECTILE))).recall();
+                shovel.remove(CURRENT_PROJECTILE);
             } else {
                 SoulMagnetEntity magnet = new SoulMagnetEntity(world, user);
                 magnet.refreshPositionAndAngles(user.getX(), user.getEyeY(), user.getZ(), 0, 0);
                 magnet.setVelocity(user, user.getPitch(), user.getYaw(), 0f, 1.5f, 1);
                 world.spawnEntity(magnet);
 
-                shovel.getOrCreateNbt().putUuid("CurrentProjectile", magnet.getUuid());
+                shovel.set(CURRENT_PROJECTILE, magnet.getUuid());
             }
-
         }
 
         return TypedActionResult.success(user.getStackInHand(hand));
@@ -70,7 +79,7 @@ public class SoulAlloyShovel extends ShovelItem implements SoulAlloyTool {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
         tooltip.addAll(SoulAlloyTool.getTooltip(stack));
     }
 

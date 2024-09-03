@@ -7,13 +7,17 @@ import com.glisco.conjuring.client.ber.*;
 import com.glisco.conjuring.client.ui.ConjurerScreen;
 import com.glisco.conjuring.client.ui.SoulfireForgeScreen;
 import com.glisco.conjuring.entities.SoulEntityRenderer;
+import com.glisco.conjuring.items.ConjuringFocus;
 import com.glisco.conjuring.items.ConjuringItems;
+import com.glisco.conjuring.items.EnchiridionItem;
+import com.glisco.conjuring.items.PizzaItem;
 import com.glisco.conjuring.items.soul_alloy_tools.ChangeToolModePacket;
 import com.glisco.conjuring.items.soul_alloy_tools.SoulAlloyTool;
 import com.glisco.conjuring.items.soul_alloy_tools.SoulAlloyToolAbilities;
 import com.glisco.conjuring.mixin.WorldRendererInvoker;
 import io.wispforest.lavender.client.LavenderBookScreen;
 import io.wispforest.lavender.md.ItemListComponent;
+import io.wispforest.owo.Owo;
 import io.wispforest.owo.ui.component.ItemComponent;
 import io.wispforest.owo.ui.core.ParentComponent;
 import io.wispforest.owo.ui.parsing.UIModelLoader;
@@ -61,17 +65,17 @@ public class ConjuringClient implements ClientModInitializer {
         EntityRendererRegistry.register(Conjuring.SOUL_MAGNET, SoulEntityRenderer::new);
         EntityRendererRegistry.register(Conjuring.SOUL_HARVESTER, SoulEntityRenderer::new);
 
-        ModelPredicateProviderRegistry.register(ConjuringItems.CONJURING_FOCUS, Conjuring.id("has_soul"), (stack, world, entity, seed) -> stack.getOrCreateNbt().contains("Entity") ? 1f : 0f);
-        ModelPredicateProviderRegistry.register(ConjuringItems.STABILIZED_CONJURING_FOCUS, Conjuring.id("has_soul"), (stack, world, entity, seed) -> stack.getOrCreateNbt().contains("Entity") ? 1f : 0f);
-        ModelPredicateProviderRegistry.register(ConjuringItems.ENCHIRIDION, Conjuring.id("is_sandwich"), (stack, world, entity, seed) -> stack.getOrCreateNbt().getBoolean("Sandwich") ? 1f : 0f);
-        ModelPredicateProviderRegistry.register(ConjuringItems.PIZZA, Conjuring.id("is_brinsa"), (stack, world, entity, seed) -> stack.getOrCreateNbt().contains("Brinsa") ? 1f : 0f);
+        ModelPredicateProviderRegistry.register(ConjuringItems.CONJURING_FOCUS, Conjuring.id("has_soul"), (stack, world, entity, seed) -> stack.contains(ConjuringFocus.ENTITY) ? 1f : 0f);
+        ModelPredicateProviderRegistry.register(ConjuringItems.STABILIZED_CONJURING_FOCUS, Conjuring.id("has_soul"), (stack, world, entity, seed) -> stack.contains(ConjuringFocus.ENTITY) ? 1f : 0f);
+        ModelPredicateProviderRegistry.register(ConjuringItems.ENCHIRIDION, Conjuring.id("is_sandwich"), (stack, world, entity, seed) -> stack.getOrDefault(EnchiridionItem.SANDWICH, false) ? 1f : 0f);
+        ModelPredicateProviderRegistry.register(ConjuringItems.PIZZA, Conjuring.id("is_brinsa"), (stack, world, entity, seed) -> stack.getOrDefault(PizzaItem.BRINSA, false) ? 1f : 0f);
 
         HandledScreens.register(Conjuring.CONJURER_SCREEN_HANDLER_TYPE, ConjurerScreen::new);
         HandledScreens.register(Conjuring.SOULFIRE_FORGE_SCREEN_HANDLER_TYPE, SoulfireForgeScreen::new);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (TOGGLE_TOOL_MODE.wasPressed()) {
-                client.getNetworkHandler().sendPacket(ChangeToolModePacket.create());
+                Conjuring.CHANNEL.clientHandle().send(new ChangeToolModePacket());
             }
         });
 
@@ -102,9 +106,9 @@ public class ConjuringClient implements ClientModInitializer {
             );
 
             var inputGrid = recipeComponent.childById(ParentComponent.class, "input-grid");
-            ((RecipeGridAligner<Ingredient>) (inputs, slot, amount, gridX, gridY) -> {
+            ((RecipeGridAligner<Ingredient>) (input, slot, amount, gridX, gridY) -> {
                 if (!(inputGrid.children().get(slot) instanceof ItemListComponent itemList)) return;
-                itemList.ingredient(inputs.next());
+                itemList.ingredient(input);
             }).alignRecipeToGrid(3, 3, 9, recipeEntry, recipe.getIngredients().iterator(), 0);
 
             recipeComponent.childById(ItemComponent.class, "output").stack(recipe.getResult(MinecraftClient.getInstance().world.getRegistryManager()));

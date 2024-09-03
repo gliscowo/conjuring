@@ -1,0 +1,21 @@
+{
+  "type": "conjuring:soulfire_forge",
+  "pattern": [
+    " b ",
+    " e ",
+    " b "
+  ],
+  "key": {
+    "b": {
+      "item": "minecraft:blaze_rod"
+    },
+    "e": {
+      "item": "conjuring:conjuration_essence"
+    }
+  },
+  "smeltTime": 300,
+  "result": {
+    "id": "conjuring:soul_rod",
+    "count": 1
+  }
+}

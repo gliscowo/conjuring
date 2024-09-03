@@ -1,0 +1,25 @@
+{
+  "type": "conjuring:soul_weaving",
+  "inputs": [
+    {
+      "item": "minecraft:netherite_sword"
+    },
+    {
+      "item": "conjuring:soul_slice"
+    },
+    {
+      "item": "conjuring:soul_alloy"
+    },
+    {
+      "item": "conjuring:soul_alloy"
+    },
+    {
+      "item": "conjuring:soul_alloy"
+    }
+  ],
+  "result": {
+    "id": "conjuring:soul_alloy_sword",
+    "count": 1
+  },
+  "transferTag": true
+}

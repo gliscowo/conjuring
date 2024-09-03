@@ -1,0 +1,24 @@
+{
+  "type": "conjuring:soulfire_forge",
+  "pattern": [
+    "sgs",
+    "gng",
+    "sgs"
+  ],
+  "key": {
+    "s": {
+      "item": "conjuring:conjuration_essence"
+    },
+    "g": {
+      "item": "minecraft:iron_ingot"
+    },
+    "n": {
+      "item": "minecraft:nether_star"
+    }
+  },
+  "smeltTime": 1200,
+  "result": {
+    "id": "conjuring:soul_slice",
+    "count": 2
+  }
+}

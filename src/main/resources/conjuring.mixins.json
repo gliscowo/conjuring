@@ -6,13 +6,10 @@
   "mixins": [
     "DispenserBehaviorMixin",
     "EnchantmentHelperMixin",
-    "ItemAccessor",
-    "ItemStackMixin",
     "LivingEntityMixin",
     "PlayerEntityMixin", "RawShapedRecipeDataAccessor"
   ],
   "client": [
-    "InGameHudMixin",
     "WorldRendererInvoker"
   ],
   "injectors": {

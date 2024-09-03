@@ -1,0 +1,24 @@
+{
+  "type": "conjuring:soulfire_forge",
+  "pattern": [
+    "  d",
+    " b ",
+    "q  "
+  ],
+  "key": {
+    "b": {
+      "item": "minecraft:blaze_rod"
+    },
+    "q": {
+      "item": "minecraft:quartz"
+    },
+    "d": {
+      "item": "minecraft:diamond"
+    }
+  },
+  "smeltTime": 200,
+  "result": {
+    "id": "conjuring:conjuring_scepter",
+    "count": 1
+  }
+}

@@ -1,24 +1,45 @@
 package com.glisco.conjuring.items.soul_alloy_tools;
 
+import com.glisco.conjuring.Conjuring;
+import com.google.common.collect.ImmutableMap;
+import com.mojang.serialization.Codec;
+import io.wispforest.endec.Endec;
 import io.wispforest.owo.ops.TextOps;
-import io.wispforest.owo.serialization.Endec;
-import io.wispforest.owo.serialization.endec.KeyedEndec;
+import io.wispforest.owo.serialization.CodecUtils;
 import net.minecraft.block.BlockState;
+import net.minecraft.component.ComponentMap;
+import net.minecraft.component.ComponentType;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 
 public interface SoulAlloyTool {
 
-    String MODIFIERS_KEY = "Modifiers";
-    KeyedEndec<Boolean> SECONDARY_ENABLED = Endec.BOOLEAN.keyed("SecondaryEnabled", false);
+    ComponentType<ModifiersComponent> MODIFIERS = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Conjuring.id("soul_alloy_tool_modifiers"),
+            ComponentType.<ModifiersComponent>builder()
+                    .codec(CodecUtils.toCodec(ModifiersComponent.ENDEC))
+                    .packetCodec(CodecUtils.toPacketCodec(ModifiersComponent.ENDEC))
+                    .build()
+    );
+
+    ComponentType<Boolean> SECONDARY_ENABLED = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Conjuring.id("soul_alloy_tool_secondary"),
+            ComponentType.<Boolean>builder()
+                    .codec(Codec.BOOL)
+                    .packetCodec(PacketCodecs.BOOL)
+                    .build()
+    );
 
     default boolean canAoeDig() {
         return false;
@@ -29,35 +50,35 @@ public interface SoulAlloyTool {
     }
 
     static void toggleEnabledState(ItemStack stack) {
-        stack.mutate(SECONDARY_ENABLED, enabled -> !enabled);
+        stack.apply(SECONDARY_ENABLED, false, enabled -> !enabled);
     }
 
     static boolean isSecondaryEnabled(ItemStack stack) {
-        return stack.get(SECONDARY_ENABLED);
+        return stack.getOrDefault(SECONDARY_ENABLED, false);
     }
 
     static void addModifier(ItemStack stack, SoulAlloyModifier modifier) {
-        NbtCompound modifierTag = stack.getOrCreateSubNbt(MODIFIERS_KEY);
+        var modifiers = stack.getOrDefault(MODIFIERS, ModifiersComponent.DEFAULT).modifiers;
 
-        int level = modifierTag.contains(modifier.name()) ? modifierTag.getInt(modifier.name()) : 0;
+        int level = modifiers.getOrDefault(modifier, 0);
         level++;
 
-        modifierTag.putInt(modifier.name(), level);
+        stack.set(MODIFIERS, new ModifiersComponent(ImmutableMap.<SoulAlloyModifier, Integer>builder().putAll(modifiers).put(modifier, level).buildKeepingLast()));
     }
 
     static boolean canAddModifier(ItemStack stack, SoulAlloyModifier modifier) {
-        NbtCompound modifierTag = stack.getOrCreateSubNbt(MODIFIERS_KEY);
+        var modifiers = stack.getOrDefault(MODIFIERS, ModifiersComponent.DEFAULT).modifiers;
 
-        if (modifierTag.getKeys().size() >= 2 && getModifierLevel(stack, modifier) == 0) return false;
+        if (modifiers.size() >= 2 && getModifierLevel(stack, modifier) == 0) return false;
 
         if (getModifierLevel(stack, modifier) >= 3) return false;
 
-        return modifierTag.getKeys().stream().mapToInt(modifierTag::getInt).sum() < 5;
+        return modifiers.values().stream().mapToInt(Integer::intValue).sum() < 5;
     }
 
     static boolean canAddModifiers(ItemStack stack, List<SoulAlloyModifier> modifiers) {
 
-        var modifierMap = getModifiers(stack);
+        var modifierMap = new HashMap<>(stack.getOrDefault(MODIFIERS, ModifiersComponent.DEFAULT).modifiers);
 
         for (SoulAlloyModifier modifier : modifiers) {
             if (!modifierMap.containsKey(modifier)) {
@@ -79,17 +100,15 @@ public interface SoulAlloyTool {
     }
 
     static List<Text> getTooltip(ItemStack stack) {
-        if (stack.getSubNbt(MODIFIERS_KEY) == null) return List.of();
+        if (!stack.contains(MODIFIERS)) return List.of();
 
         var tooltip = new ArrayList<Text>();
-        var modifiers = stack.getOrCreateSubNbt(MODIFIERS_KEY);
+        var modifiers = stack.get(MODIFIERS).modifiers;
 
-        for (String key : modifiers.getKeys()) {
-            var level = "●".repeat(Math.max(0, modifiers.getInt(key)));
-
-            var modifier = SoulAlloyModifier.valueOf(key);
-            tooltip.add(Text.translatable(modifier.translation_key).styled(style -> style.withColor(modifier.textColor)).append(": ").append(TextOps.withFormatting(level, Formatting.GRAY)));
-        }
+        modifiers.forEach((modifier, level) -> {
+            var levelString = "●".repeat(Math.max(0, level));
+            tooltip.add(Text.translatable(modifier.translation_key).styled(style -> style.withColor(modifier.textColor)).append(": ").append(TextOps.withFormatting(levelString, Formatting.GRAY)));
+        });
 
         if (!tooltip.isEmpty() && stack.hasEnchantments()) {
             tooltip.add(Text.empty());
@@ -99,16 +118,11 @@ public interface SoulAlloyTool {
     }
 
     static int getModifierLevel(ItemStack stack, SoulAlloyModifier modifier) {
-        return stack.getSubNbt(MODIFIERS_KEY) != null && stack.getSubNbt(MODIFIERS_KEY).contains(modifier.name()) ? stack.getSubNbt(MODIFIERS_KEY).getInt(modifier.name()) : 0;
+        return stack.getOrDefault(MODIFIERS, ModifiersComponent.DEFAULT).modifiers.getOrDefault(modifier, 0);
     }
 
-    static Map<SoulAlloyModifier, Integer> getModifiers(ItemStack stack) {
-        if (stack.getNbt() == null) return Map.of();
-
-        var modifierMap = new HashMap<SoulAlloyModifier, Integer>();
-        var modifierTag = stack.getOrCreateSubNbt(MODIFIERS_KEY);
-        modifierTag.getKeys().forEach(s -> modifierMap.put(SoulAlloyModifier.valueOf(s), modifierTag.getInt(s)));
-        return modifierMap;
+    static int getModifierLevel(ComponentMap components, SoulAlloyModifier modifier) {
+        return components.getOrDefault(MODIFIERS, ModifiersComponent.DEFAULT).modifiers.getOrDefault(modifier, 0);
     }
 
     enum SoulAlloyModifier {
@@ -125,6 +139,13 @@ public interface SoulAlloyTool {
             this.textColor = textColor;
             this.translation_key = translation_key;
         }
+    }
+
+    record ModifiersComponent(ImmutableMap<SoulAlloyModifier, Integer> modifiers) {
+        public static final ModifiersComponent DEFAULT = new ModifiersComponent(ImmutableMap.of());
+
+        public static final Endec<ModifiersComponent> ENDEC = Endec.map(SoulAlloyModifier::name, SoulAlloyModifier::valueOf, Endec.INT)
+                .xmap(map -> new ModifiersComponent(ImmutableMap.copyOf(map)), ModifiersComponent::modifiers);
     }
 
 }

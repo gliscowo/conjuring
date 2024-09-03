@@ -8,6 +8,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -64,33 +65,50 @@ public class BlackstonePedestalBlock extends BlockWithEntity {
 
     //Actual Logic
 
+
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        if (stack.isEmpty()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+
         BlackstonePedestalBlockEntity pedestal = (BlackstonePedestalBlockEntity) world.getBlockEntity(pos);
-        if (pedestal.isActive()) return ActionResult.PASS;
+        if (pedestal.isActive()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         final ItemStack playerStack = player.getStackInHand(hand);
         final ItemStack pedestalItem = pedestal.getItem();
 
         if (pedestalItem.isEmpty()) {
-            if (playerStack.isEmpty()) return ActionResult.PASS;
-            if (world.isClient) return ActionResult.SUCCESS;
+            if (world.isClient) return ItemActionResult.SUCCESS;
 
             pedestal.setItem(ItemOps.singleCopy(playerStack));
-
             ItemOps.decrementPlayerHandItem(player, hand);
         } else if (!world.isClient) {
-            if (playerStack.isEmpty()) {
-                player.setStackInHand(hand, pedestalItem);
-            } else if (ItemOps.canStack(playerStack, pedestalItem)) {
+            if (ItemOps.canStack(playerStack, pedestalItem)) {
                 playerStack.increment(1);
             } else {
                 ItemScatterer.spawn(world, pos.getX(), pos.getY() + 1f, pos.getZ(), pedestalItem);
             }
+
             pedestal.setItem(ItemStack.EMPTY);
         }
 
-        return ActionResult.SUCCESS;
+        return ItemActionResult.SUCCESS;
+    }
+
+    @Override
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+        BlackstonePedestalBlockEntity pedestal = (BlackstonePedestalBlockEntity) world.getBlockEntity(pos);
+        if (pedestal.isActive()) return ActionResult.PASS;
+
+        final ItemStack pedestalItem = pedestal.getItem();
+
+        if (!pedestalItem.isEmpty()) {
+            player.setStackInHand(Hand.MAIN_HAND, pedestalItem.copy());
+            pedestal.setItem(ItemStack.EMPTY);
+
+            return ActionResult.SUCCESS;
+        }
+
+        return ActionResult.PASS;
     }
 
     @Override

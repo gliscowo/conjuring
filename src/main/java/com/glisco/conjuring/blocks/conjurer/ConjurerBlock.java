@@ -58,7 +58,7 @@ public class ConjurerBlock extends BlockWithEntity {
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
 
         if (!(player.getMainHandStack().getItem() instanceof ConjuringScepter) && !(player.getMainHandStack().getItem() instanceof SuperiorConjuringScepter))
             return ActionResult.PASS;

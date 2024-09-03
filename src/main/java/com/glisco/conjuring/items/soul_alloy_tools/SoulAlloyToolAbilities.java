@@ -4,6 +4,7 @@ import com.glisco.conjuring.items.ConjuringItems;
 import io.wispforest.owo.ops.WorldOps;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.block.BlockState;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
@@ -29,7 +30,7 @@ public class SoulAlloyToolAbilities {
             for (BlockPos pos : SoulAlloyToolAbilities.getBlocksToDig(playerEntity, ((SoulAlloyTool) playerStack.getItem()).getAoeToolOverridePredicate())) {
                 WorldOps.breakBlockWithItem(world, pos, playerStack, playerEntity);
 
-                playerStack.damage(SoulAlloyTool.getModifierLevel(playerStack, SoulAlloyTool.SoulAlloyModifier.SCOPE) * 2, playerEntity, p -> p.sendToolBreakStatus(Hand.MAIN_HAND));
+                playerStack.damage(SoulAlloyTool.getModifierLevel(playerStack, SoulAlloyTool.SoulAlloyModifier.SCOPE) * 2, playerEntity, EquipmentSlot.MAINHAND);
             }
             return true;
         });
@@ -38,7 +39,7 @@ public class SoulAlloyToolAbilities {
     public static boolean canAoeDig(PlayerEntity player) {
         return player.getMainHandStack().getItem() instanceof SoulAlloyTool
                 && SoulAlloyTool.isSecondaryEnabled(player.getMainHandStack())
-                && SoulAlloyTool.getModifiers(player.getMainHandStack()).containsKey(SoulAlloyTool.SoulAlloyModifier.SCOPE);
+                && player.getMainHandStack().getOrDefault(SoulAlloyTool.MODIFIERS, SoulAlloyTool.ModifiersComponent.DEFAULT).modifiers().containsKey(SoulAlloyTool.SoulAlloyModifier.SCOPE);
     }
 
     public static boolean canArmorPierce(PlayerEntity player) {
@@ -65,10 +66,10 @@ public class SoulAlloyToolAbilities {
         BlockPos hit = ((BlockHitResult) target).getBlockPos();
         BlockPos origin = hit;
         Direction side = ((BlockHitResult) target).getSide();
-        int scopeLevel = SoulAlloyTool.getModifiers(player.getMainHandStack()).get(SoulAlloyTool.SoulAlloyModifier.SCOPE);
+        int scopeLevel = player.getMainHandStack().getOrDefault(SoulAlloyTool.MODIFIERS, SoulAlloyTool.ModifiersComponent.DEFAULT).modifiers().getOrDefault(SoulAlloyTool.SoulAlloyModifier.SCOPE, 0);
 
         final var targetState = player.getWorld().getBlockState(hit);
-        if (!toolOverridePredicate.test(targetState) && player.getMainHandStack().getItem().getMiningSpeedMultiplier(player.getMainHandStack(), targetState) == 1)
+        if (!toolOverridePredicate.test(targetState) && player.getMainHandStack().getItem().getMiningSpeed(player.getMainHandStack(), targetState) == 1)
             return blocksToDig;
 
         switch (side.getAxis()) {
@@ -104,7 +105,7 @@ public class SoulAlloyToolAbilities {
             if (state.getHardness(player.getWorld(), blockPos) < 0) return true;
             if (toolOverridePredicate.test(state)) return false;
 
-            return player.getMainHandStack().getItem().getMiningSpeedMultiplier(player.getMainHandStack(), state) <= 1;
+            return player.getMainHandStack().getItem().getMiningSpeed(player.getMainHandStack(), state) <= 1;
         });
 
         return blocksToDig;

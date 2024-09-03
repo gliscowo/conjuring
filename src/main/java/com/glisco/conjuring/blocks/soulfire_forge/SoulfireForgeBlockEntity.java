@@ -16,6 +16,7 @@ import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
@@ -99,7 +100,7 @@ public class SoulfireForgeBlockEntity extends BlockEntity implements Implemented
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean updateCachedRecipe() {
-        var recipe = world.getRecipeManager().getFirstMatch(SoulfireForgeRecipe.Type.INSTANCE, this, world);
+        var recipe = world.getRecipeManager().getFirstMatch(SoulfireForgeRecipe.Type.INSTANCE, new SoulfireForgeRecipe.Input(this), world);
         if (recipe.isPresent()) {
             this.cachedRecipe = recipe.get().value();
             return ItemOps.canStack(this.getItems().get(9), recipe.get().value().getResult(null));
@@ -112,17 +113,17 @@ public class SoulfireForgeBlockEntity extends BlockEntity implements Implemented
 
     //Data Logic
     @Override
-    public void writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
-        Inventories.writeNbt(tag, items);
+    public void writeNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
+        super.writeNbt(tag, registries);
+        Inventories.writeNbt(tag, items, registries);
         tag.putInt("Progress", progress);
         tag.putInt("SmeltTime", smeltTime);
     }
 
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
-        Inventories.readNbt(tag, items);
+    public void readNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
+        super.readNbt(tag, registries);
+        Inventories.readNbt(tag, items, registries);
         this.progress = tag.getInt("Progress");
         this.smeltTime = tag.getInt("SmeltTime");
     }

@@ -1,0 +1,24 @@
+{
+  "type": "conjuring:gem_tinkering",
+  "inputs": [
+    {
+      "item": "conjuring:lesser_conjuration_essence"
+    },
+    {
+      "item": "minecraft:redstone"
+    },
+    {
+      "item": "minecraft:redstone"
+    },
+    {
+      "item": "minecraft:redstone"
+    },
+    {
+      "item": "minecraft:redstone"
+    }
+  ],
+  "result": {
+    "id": "conjuring:abundance_gem",
+    "count": 1
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " g ",
+    "bgb",
+    "bgb"
+  ],
+  "key": {
+    "b": {
+      "item": "minecraft:blackstone"
+    },
+    "g": {
+      "item": "minecraft:gilded_blackstone"
+    }
+  },
+  "result": {
+    "id": "conjuring:gem_tinkerer",
+    "count": 1
+  }
+}

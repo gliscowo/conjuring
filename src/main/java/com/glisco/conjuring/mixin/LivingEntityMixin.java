@@ -7,6 +7,7 @@ import com.glisco.conjuring.items.soul_alloy_tools.SoulAlloyToolAbilities;
 import com.glisco.conjuring.util.ConjuringParticleEvents;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -61,7 +62,7 @@ public abstract class LivingEntityMixin extends Entity {
 
         for (int i = 0; i < Conjuring.CONFIG.tools_config.sword_scope_max_entities() && i < entities.size(); i++) {
             entities.get(i).damage(new CopycatPlayerDamageSource(player), amount * Conjuring.CONFIG.tools_config.sword_scope_damage_multiplier() * scopeLevel);
-            player.getMainHandStack().damage(4 * scopeLevel, player, playerEntity -> player.sendToolBreakStatus(Hand.MAIN_HAND));
+            player.getMainHandStack().damage(4 * scopeLevel, player, EquipmentSlot.MAINHAND);
 
             if (!getWorld().isClient()) {
                 ConjuringParticleEvents.LINE.spawn(getWorld(), getPos(), new ConjuringParticleEvents.Line(

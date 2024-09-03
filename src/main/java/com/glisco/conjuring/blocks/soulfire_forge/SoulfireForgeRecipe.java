@@ -2,24 +2,25 @@ package com.glisco.conjuring.blocks.soulfire_forge;
 
 import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.blocks.ConjuringBlocks;
+import com.glisco.conjuring.util.ListRecipeInput;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.RecipeType;
-import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.recipe.input.RecipeInput;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 
-public class SoulfireForgeRecipe implements Recipe<Inventory> {
+public class SoulfireForgeRecipe implements Recipe<SoulfireForgeRecipe.Input> {
 
-    private final DefaultedList<Ingredient> inputs;
-    private final ItemStack result;
-    private final int smeltTime;
+    final DefaultedList<Ingredient> inputs;
+    final ItemStack result;
+    final int smeltTime;
 
     @Override
     public boolean isIgnoredInRecipeBook() {
@@ -33,11 +34,11 @@ public class SoulfireForgeRecipe implements Recipe<Inventory> {
     }
 
     @Override
-    public boolean matches(Inventory inventory, World world) {
+    public boolean matches(Input inventory, World world) {
         for (int r = 0; r < 3; r++) {
             for (int c = 0; c < 3; c++) {
                 int index = r * 3 + c;
-                if (!inputs.get(index).test(inventory.getStack(index))) return false;
+                if (!inputs.get(index).test(inventory.getStackInSlot(index))) return false;
             }
         }
 
@@ -45,7 +46,7 @@ public class SoulfireForgeRecipe implements Recipe<Inventory> {
     }
 
     @Override
-    public ItemStack craft(Inventory inventory, DynamicRegistryManager drm) {
+    public ItemStack craft(Input inventory, RegistryWrapper.WrapperLookup registries) {
         return ItemStack.EMPTY;
     }
 
@@ -55,7 +56,7 @@ public class SoulfireForgeRecipe implements Recipe<Inventory> {
     }
 
     @Override
-    public ItemStack getResult(DynamicRegistryManager drm) {
+    public ItemStack getResult(RegistryWrapper.WrapperLookup registries) {
         return result.copy();
     }
 
@@ -89,5 +90,22 @@ public class SoulfireForgeRecipe implements Recipe<Inventory> {
         public static final Type INSTANCE = new Type();
 
         public static final Identifier ID = Conjuring.id("soulfire_forge");
+    }
+
+    public static class Input implements RecipeInput {
+        private final SoulfireForgeBlockEntity forge;
+        public Input(SoulfireForgeBlockEntity forge) {
+            this.forge = forge;
+        }
+
+        @Override
+        public ItemStack getStackInSlot(int slot) {
+            return this.forge.getStack(slot);
+        }
+
+        @Override
+        public int getSize() {
+            return this.forge.size();
+        }
     }
 }

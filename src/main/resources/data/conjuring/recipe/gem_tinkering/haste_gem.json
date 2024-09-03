@@ -1,0 +1,24 @@
+{
+  "type": "conjuring:gem_tinkering",
+  "inputs": [
+    {
+      "item": "conjuring:lesser_conjuration_essence"
+    },
+    {
+      "item": "minecraft:emerald"
+    },
+    {
+      "item": "minecraft:emerald"
+    },
+    {
+      "item": "minecraft:emerald"
+    },
+    {
+      "item": "minecraft:emerald"
+    }
+  ],
+  "result": {
+    "id": "conjuring:haste_gem",
+    "count": 1
+  }
+}

@@ -25,7 +25,7 @@ public class ConjurerScreenHandler extends ScreenHandler {
         super(Conjuring.CONJURER_SCREEN_HANDLER_TYPE, syncId);
         this.inventory = inventory;
 
-        this.addSlot(new ValidatingSlot(this.inventory, 0, 77, 41, stack -> stack.getItem() instanceof ConjuringFocus && stack.getOrCreateNbt().contains("Entity")));
+        this.addSlot(new ValidatingSlot(this.inventory, 0, 77, 41, stack -> stack.getItem() instanceof ConjuringFocus && stack.contains(ConjuringFocus.ENTITY)));
 
         this.addSlot(new ValidatingSlot(this.inventory, 1, 77, 2, stack -> stack.getItem() == ConjuringItems.HASTE_CHARM));
         this.addSlot(new ValidatingSlot(this.inventory, 2, 117, 41, stack -> stack.getItem() == ConjuringItems.ABUNDANCE_CHARM));

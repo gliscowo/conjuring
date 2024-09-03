@@ -14,6 +14,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.world.ServerWorld;
@@ -83,16 +84,16 @@ public class ConjurerBlockEntity extends BlockEntity implements ImplementedInven
 
     //NBT Logic
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
-        Inventories.readNbt(tag, items);
+    public void readNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
+        super.readNbt(tag, registries);
+        Inventories.readNbt(tag, items, registries);
         this.logic.readNbt(world, pos, tag);
     }
 
     @Override
-    public void writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
-        Inventories.writeNbt(tag, items);
+    public void writeNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
+        super.writeNbt(tag, registries);
+        Inventories.writeNbt(tag, items, registries);
         this.logic.writeNbt(tag);
     }
 
@@ -103,9 +104,9 @@ public class ConjurerBlockEntity extends BlockEntity implements ImplementedInven
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt() {
+    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
         var tag = new NbtCompound();
-        this.writeNbt(tag);
+        this.writeNbt(tag, registries);
         tag.remove("SpawnPotentials");
         tag.remove("Items");
         return tag;

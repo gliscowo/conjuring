@@ -9,6 +9,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,10 +27,10 @@ public class BlackstonePedestalBlockEntity extends BlockEntity {
 
     //Data Logic
     @Override
-    public void writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
+    public void writeNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
+        super.writeNbt(tag, registries);
 
-        ItemOps.store(this.renderedItem, tag, "Item");
+        ItemOps.store(registries, this.renderedItem, tag, "Item");
 
         if (linkedFunnel == null) {
             tag.putIntArray("LinkedFunnel", new int[0]);
@@ -47,9 +48,9 @@ public class BlackstonePedestalBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
-        this.renderedItem = ItemOps.get(tag, "Item");
+    public void readNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
+        super.readNbt(tag, registries);
+        this.renderedItem = ItemOps.get(registries, tag, "Item");
 
         int[] funnelPos = tag.getIntArray("LinkedFunnel");
         if (funnelPos.length > 0) {
@@ -98,9 +99,9 @@ public class BlackstonePedestalBlockEntity extends BlockEntity {
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt() {
+    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
         var tag = new NbtCompound();
-        this.writeNbt(tag);
+        this.writeNbt(tag, registries);
         return tag;
     }
 }

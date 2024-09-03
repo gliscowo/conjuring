@@ -1,8 +1,15 @@
 package com.glisco.conjuring.blocks.soul_weaver;
 
+import com.google.gson.JsonParseException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import io.wispforest.endec.Endec;
+import io.wispforest.endec.StructEndec;
+import io.wispforest.endec.impl.StructEndecBuilder;
+import io.wispforest.owo.serialization.CodecUtils;
+import io.wispforest.owo.serialization.EndecRecipeSerializer;
+import io.wispforest.owo.serialization.endec.MinecraftEndecs;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.recipe.Ingredient;
@@ -13,58 +20,30 @@ import net.minecraft.util.dynamic.Codecs;
 
 import java.util.List;
 
-public class SoulWeaverRecipeSerializer implements RecipeSerializer<SoulWeaverRecipe> {
+public class SoulWeaverRecipeSerializer extends EndecRecipeSerializer<SoulWeaverRecipe> {
 
-    private SoulWeaverRecipeSerializer() {}
+    public static final StructEndec<SoulWeaverRecipe> ENDEC = StructEndecBuilder.of(
+            MinecraftEndecs.ITEM_STACK.fieldOf("result", s -> s.getResult(null)),
+            CodecUtils.toEndec(Ingredient.DISALLOW_EMPTY_CODEC).listOf().validate(ingredients -> {
+                if (ingredients.size() > 5) {
+                    throw new JsonParseException("Gem tinkerer recipes cannot have more than 5 inputs");
+                }
+            }).fieldOf("inputs", SoulWeaverRecipe::getInputs),
+            Endec.BOOLEAN.fieldOf("transferTag", soulWeaverRecipe -> soulWeaverRecipe.transferTag),
+            (stack, ingredients, transferTag) -> {
+                var inputs = DefaultedList.ofSize(5, Ingredient.EMPTY);
+                for (int i = 0; i < ingredients.size(); i++) {
+                    inputs.set(i, ingredients.get(i));
+                }
+
+                return new SoulWeaverRecipe(stack, inputs, transferTag);
+            }
+    );
+
+    private SoulWeaverRecipeSerializer() {
+        super(ENDEC);
+    }
 
     public static final SoulWeaverRecipeSerializer INSTANCE = new SoulWeaverRecipeSerializer();
     public static final Identifier ID = SoulWeaverRecipe.Type.ID;
-
-    public static final Codec<SoulWeaverRecipe> CODEC = RecordCodecBuilder.create(instance -> {
-        return instance.group(
-                ItemStack.RECIPE_RESULT_CODEC.fieldOf("result").forGetter(o -> ItemStack.EMPTY),
-                Codecs.validate(Ingredient.DISALLOW_EMPTY_CODEC.listOf(), ingredients -> {
-                    if (ingredients.size() <= 5) {
-                        return DataResult.success(ingredients);
-                    } else {
-                        return DataResult.error(() -> "Gem tinkerer recipes cannot have more than 5 inputs");
-                    }
-                }).fieldOf("inputs").forGetter(o -> List.of()),
-                Codec.BOOL.fieldOf("transferTag").forGetter(o -> false)
-        ).apply(instance, (stack, ingredients, transferTag) -> {
-            var inputs = DefaultedList.ofSize(5, Ingredient.EMPTY);
-            for (int i = 0; i < ingredients.size(); i++) {
-                inputs.set(i, ingredients.get(i));
-            }
-
-            return new SoulWeaverRecipe(stack, inputs, transferTag);
-        });
-    });
-
-    @Override
-    public Codec<SoulWeaverRecipe> codec() {
-        return CODEC;
-    }
-    @Override
-    public SoulWeaverRecipe read(PacketByteBuf buf) {
-        ItemStack result = buf.readItemStack();
-        boolean transferTag = buf.readBoolean();
-
-        var inputs = DefaultedList.ofSize(5, Ingredient.EMPTY);
-        for (int i = 0; i < 5; i++) {
-            inputs.set(i, Ingredient.fromPacket(buf));
-        }
-
-        return new SoulWeaverRecipe(result, inputs, transferTag);
-    }
-
-    @Override
-    public void write(PacketByteBuf buf, SoulWeaverRecipe recipe) {
-        buf.writeItemStack(recipe.getResult(null));
-        buf.writeBoolean(recipe.transferTag);
-
-        for (Ingredient ingredient : recipe.getInputs()) {
-            ingredient.write(buf);
-        }
-    }
 }

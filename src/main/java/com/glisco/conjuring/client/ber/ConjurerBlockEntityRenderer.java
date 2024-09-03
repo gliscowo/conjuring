@@ -22,7 +22,7 @@ public class ConjurerBlockEntityRenderer implements BlockEntityRenderer<Conjurer
 
         matrixStack.translate(0.5D, 0.0D, 0.5D);
         ConjurerLogic mobSpawnerLogic = conjurerBlockEntity.getLogic();
-        Entity entity = mobSpawnerLogic.getRenderedEntity(conjurerBlockEntity.getWorld());
+        Entity entity = mobSpawnerLogic.getRenderedEntity(conjurerBlockEntity.getWorld(), conjurerBlockEntity.getPos());
         if (entity != null) {
             float g = 0.53125F;
             float h = Math.max(entity.getWidth(), entity.getHeight());
@@ -33,7 +33,7 @@ public class ConjurerBlockEntityRenderer implements BlockEntityRenderer<Conjurer
             if (!conjurerBlockEntity.getLogic().isPlayerInRange(conjurerBlockEntity.getWorld(), conjurerBlockEntity.getPos())) tickDelta = 0;
 
             matrixStack.translate(0.0D, 0.4000000059604645D, 0.0D);
-            matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) MathHelper.lerp(tickDelta, mobSpawnerLogic.method_8279(), mobSpawnerLogic.method_8278()) * 10.0F));
+            matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) MathHelper.lerp(tickDelta, mobSpawnerLogic.getLastRotation(), mobSpawnerLogic.getRotation()) * 10.0F));
             matrixStack.translate(0.0D, -0.20000000298023224D, 0.0D);
             matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(-30.0F));
             matrixStack.scale(g, g, g);

@@ -1,0 +1,24 @@
+{
+  "type": "conjuring:soulfire_forge",
+  "pattern": [
+    "gng",
+    "nIn",
+    "gng"
+  ],
+  "key": {
+    "g": {
+      "item": "minecraft:gold_ingot"
+    },
+    "n": {
+      "item": "conjuring:soul_alloy"
+    },
+    "I": {
+      "item": "conjuring:lesser_conjuration_essence"
+    }
+  },
+  "smeltTime": 600,
+  "result": {
+    "id": "conjuring:conjuring_focus",
+    "count": 1
+  }
+}

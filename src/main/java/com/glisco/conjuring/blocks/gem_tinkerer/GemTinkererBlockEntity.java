@@ -4,6 +4,7 @@ import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.blocks.ConjuringBlocks;
 import com.glisco.conjuring.items.GemItem;
 import com.glisco.conjuring.items.soul_alloy_tools.SoulAlloyTool;
+import com.glisco.conjuring.util.ListRecipeInput;
 import io.wispforest.owo.blockentity.LinearProcess;
 import io.wispforest.owo.blockentity.LinearProcessExecutor;
 import io.wispforest.owo.ops.WorldOps;
@@ -20,6 +21,7 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -57,10 +59,10 @@ public class GemTinkererBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
+    public void readNbt(NbtCompound tag, RegistryWrapper.WrapperLookup lookup) {
+        super.readNbt(tag, lookup);
         inventory.clear();
-        Inventories.readNbt(tag, inventory);
+        Inventories.readNbt(tag, inventory, lookup);
         executor.readState(tag);
     }
 
@@ -71,15 +73,15 @@ public class GemTinkererBlockEntity extends BlockEntity {
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt() {
+    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup lookup) {
         var tag = new NbtCompound();
-        this.writeNbt(tag);
+        this.writeNbt(tag, lookup);
         return tag;
     }
 
     @Override
-    public void writeNbt(NbtCompound tag) {
-        Inventories.writeNbt(tag, inventory);
+    public void writeNbt(NbtCompound tag, RegistryWrapper.WrapperLookup lookup) {
+        Inventories.writeNbt(tag, inventory, lookup);
         executor.writeState(tag);
     }
 
@@ -91,12 +93,12 @@ public class GemTinkererBlockEntity extends BlockEntity {
 
     public boolean verifyRecipe() {
 
-        Inventory testInventory = new SimpleInventory(5);
+        var testInventory = DefaultedList.ofSize(5, ItemStack.EMPTY);
         for (int i = 0; i < inventory.size(); i++) {
-            testInventory.setStack(i, inventory.get(i));
+            testInventory.set(i, inventory.get(i));
         }
 
-        Optional<GemTinkererRecipe> recipeOptional = world.getRecipeManager().getFirstMatch(GemTinkererRecipe.Type.INSTANCE, testInventory, world).map(RecipeEntry::value);
+        var recipeOptional = world.getRecipeManager().getFirstMatch(GemTinkererRecipe.Type.INSTANCE, new ListRecipeInput(testInventory), world).map(RecipeEntry::value);
         if (recipeOptional.isEmpty()) return false;
 
         cachedRecipe = recipeOptional.get();

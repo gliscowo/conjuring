@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(targets = {"net.minecraft.block.dispenser.DispenserBehavior$10"})
+@Mixin(targets = {"net.minecraft.block.dispenser.DispenserBehavior$17"})
 public class DispenserBehaviorMixin {
 
     @Inject(method = "dispenseSilently(Lnet/minecraft/util/math/BlockPointer;Lnet/minecraft/item/ItemStack;)Lnet/minecraft/item/ItemStack;", at = @At("HEAD"), cancellable = true)
@@ -24,10 +24,8 @@ public class DispenserBehaviorMixin {
         if (state.get(SoulfireForgeBlock.BURNING)) return;
 
         pointer.world().setBlockState(pointer.pos().offset(direction), state.with(SoulfireForgeBlock.BURNING, true));
-        stack.damage(1, pointer.world().getRandom(), null);
+        stack.damage(1, pointer.world(), null, item -> {});
 
         cir.setReturnValue(stack.getDamage() > stack.getMaxDamage() ? ItemStack.EMPTY : stack);
-
     }
-
 }

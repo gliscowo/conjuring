@@ -8,11 +8,12 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CropBlock;
 import net.minecraft.block.PlantBlock;
-import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.HoeItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -31,7 +32,7 @@ public class SoulAlloyScythe extends HoeItem implements SoulAlloyTool {
             block == blockState.getBlock() && blockState.getBlock() instanceof CropBlock crop && crop.isMature(blockState);
 
     public SoulAlloyScythe() {
-        super(SoulAlloyToolMaterial.INSTANCE, 2, -3.0f, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON));
+        super(SoulAlloyToolMaterial.INSTANCE, new OwoItemSettings().group(Conjuring.CONJURING_GROUP).rarity(Rarity.UNCOMMON));
     }
 
     @Override
@@ -79,7 +80,7 @@ public class SoulAlloyScythe extends HoeItem implements SoulAlloyTool {
 
             user.getItemCooldownManager().set(ConjuringItems.SOUL_ALLOY_SCYTHE, Conjuring.CONFIG.tools_config.scythe_secondary_cooldown());
             user.getStackInHand(hand).damage(Conjuring.CONFIG.tools_config.scythe_secondary_base_durability_cost() + Conjuring.CONFIG.tools_config.scythe_secondary_per_scope_durability_cost(),
-                    user, player -> player.sendToolBreakStatus(hand));
+                    user, LivingEntity.getSlotForHand(hand));
         }
 
         return TypedActionResult.success(user.getStackInHand(hand));
@@ -98,8 +99,7 @@ public class SoulAlloyScythe extends HoeItem implements SoulAlloyTool {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
         tooltip.addAll(SoulAlloyTool.getTooltip(stack));
     }
-
 }

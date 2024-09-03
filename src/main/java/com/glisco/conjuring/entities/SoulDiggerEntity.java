@@ -2,7 +2,11 @@ package com.glisco.conjuring.entities;
 
 import com.glisco.conjuring.Conjuring;
 import com.glisco.conjuring.items.soul_alloy_tools.BlockCrawler;
-import net.fabricmc.fabric.api.tag.convention.v1.ConventionalBlockTags;
+import io.wispforest.endec.SerializationContext;
+import io.wispforest.endec.impl.KeyedEndec;
+import io.wispforest.owo.serialization.RegistriesAttribute;
+import io.wispforest.owo.serialization.endec.MinecraftEndecs;
+import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -18,6 +22,7 @@ import net.minecraft.world.World;
 public class SoulDiggerEntity extends SoulEntity {
 
     private static final TrackedData<ItemStack> STACK;
+    private static final KeyedEndec<ItemStack> SHOVEL_STACK = MinecraftEndecs.ITEM_STACK.keyed("shovel_stack", ItemStack.EMPTY);
 
     static {
         STACK = DataTracker.registerData(SoulDiggerEntity.class, TrackedDataHandlerRegistry.ITEM_STACK);
@@ -33,21 +38,20 @@ public class SoulDiggerEntity extends SoulEntity {
     }
 
     @Override
-    protected void initDataTracker() {
-        this.getDataTracker().startTracking(STACK, ItemStack.EMPTY);
+    protected void initDataTracker(DataTracker.Builder builder) {
+        builder.add(STACK, ItemStack.EMPTY);
     }
 
     @Override
     protected void writeCustomDataToNbt(NbtCompound tag) {
         super.writeCustomDataToNbt(tag);
-        tag.put("Item", getDataTracker().get(STACK).writeNbt(new NbtCompound()));
+        tag.put(SerializationContext.attributes(RegistriesAttribute.of(this.getRegistryManager())), SHOVEL_STACK, this.getDataTracker().get(STACK));
     }
 
     @Override
     protected void readCustomDataFromNbt(NbtCompound tag) {
         super.readCustomDataFromNbt(tag);
-        ItemStack stack = ItemStack.fromNbt(tag.getCompound("Item"));
-        this.setItem(stack.copy());
+        this.setItem(tag.get(SerializationContext.attributes(RegistriesAttribute.of(this.getRegistryManager())), SHOVEL_STACK));
     }
 
     public void setItem(ItemStack stack) {

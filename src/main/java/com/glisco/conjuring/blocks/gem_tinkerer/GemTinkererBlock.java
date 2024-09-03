@@ -11,6 +11,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.hit.BlockHitResult;
@@ -44,82 +45,92 @@ public class GemTinkererBlock extends BlockWithEntity {
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        if (stack.isEmpty()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         //We don't allow offhand because it confuses people
-        if (hand == Hand.OFF_HAND) return ActionResult.PASS;
+        if (hand == Hand.OFF_HAND || player.isSneaking()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
         GemTinkererBlockEntity tinkerer = (GemTinkererBlockEntity) world.getBlockEntity(pos);
         final Integer sideIndex = SIDE_TO_INDEX.get(hit.getSide());
 
         if (tinkerer.isRunning()) {
-            if (!tinkerer.isCraftingComplete() || !player.getStackInHand(hand).isEmpty()) return ActionResult.PASS;
+            if (!tinkerer.isCraftingComplete() || !player.getStackInHand(hand).isEmpty()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
 
             player.setStackInHand(hand, tinkerer.getInventory().get(sideIndex));
             tinkerer.getInventory().set(sideIndex, ItemStack.EMPTY);
             tinkerer.markDirty();
-            return ActionResult.SUCCESS;
+            return ItemActionResult.SUCCESS;
         }
 
         ItemStack playerStack = player.getStackInHand(hand);
         DefaultedList<ItemStack> tinkererInventory = tinkerer.getInventory();
 
-        if (playerStack.isEmpty()) {
+        ItemStack sideStack = tinkererInventory.get(sideIndex);
 
-            if (player.isSneaking()) {
+        if (hit.getSide() == Direction.UP && !tinkererInventory.get(sideIndex).isEmpty() && !ItemStack.areItemsEqual(sideStack, playerStack)) {
 
-                if (hit.getSide() == Direction.UP) {
-                    for (int i = 1; i < 5; i++) {
-                        player.getInventory().offerOrDrop(tinkererInventory.get(i));
-                        tinkererInventory.set(i, ItemStack.EMPTY);
-                    }
+            for (int i = 1; i < 5; i++) {
+                if (!tinkererInventory.get(i).isEmpty()) continue;
+                tinkererInventory.set(i, ItemOps.singleCopy(playerStack));
 
-                    tinkerer.markDirty();
-                    return ActionResult.SUCCESS;
+                if (!ItemOps.emptyAwareDecrement(playerStack)) {
+                    player.setStackInHand(hand, ItemStack.EMPTY);
+                    break;
                 }
-
-                return tinkerer.onUse(player);
             }
 
-            ItemStack sideStack = tinkererInventory.get(sideIndex);
-            if (sideStack.isEmpty()) return ActionResult.PASS;
-
-            player.setStackInHand(hand, sideStack);
-
-            tinkererInventory.set(sideIndex, ItemStack.EMPTY);
             tinkerer.markDirty();
         } else {
-            ItemStack sideStack = tinkererInventory.get(sideIndex);
+            if (sideStack.isEmpty()) {
+                tinkererInventory.set(sideIndex, ItemOps.singleCopy(playerStack));
+                tinkerer.markDirty();
 
-            if (hit.getSide() == Direction.UP && !tinkererInventory.get(sideIndex).isEmpty() && !ItemStack.areItemsEqual(sideStack, playerStack)) {
+                ItemOps.decrementPlayerHandItem(player, hand);
+            } else {
+                if (ItemOps.canStack(playerStack, sideStack)) {
+                    playerStack.increment(1);
+                } else {
+                    ItemScatterer.spawn(world, pos.getX(), pos.getY() + 1f, pos.getZ(), sideStack);
+                }
 
+                tinkererInventory.set(sideIndex, ItemStack.EMPTY);
+                tinkerer.markDirty();
+            }
+        }
+
+        return ItemActionResult.SUCCESS;
+    }
+
+    @Override
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+        var tinkerer = (GemTinkererBlockEntity) world.getBlockEntity(pos);
+        var tinkererInventory = tinkerer.getInventory();
+        var sideIndex = SIDE_TO_INDEX.get(hit.getSide());
+
+        if (player.isSneaking()) {
+
+            if (hit.getSide() == Direction.UP) {
                 for (int i = 1; i < 5; i++) {
-                    if (!tinkererInventory.get(i).isEmpty()) continue;
-                    tinkererInventory.set(i, ItemOps.singleCopy(playerStack));
-
-                    if (!ItemOps.emptyAwareDecrement(playerStack)) {
-                        player.setStackInHand(hand, ItemStack.EMPTY);
-                        break;
-                    }
+                    player.getInventory().offerOrDrop(tinkererInventory.get(i));
+                    tinkererInventory.set(i, ItemStack.EMPTY);
                 }
 
                 tinkerer.markDirty();
-            } else {
-                if (sideStack.isEmpty()) {
-                    tinkererInventory.set(sideIndex, ItemOps.singleCopy(playerStack));
-                    tinkerer.markDirty();
-
-                    ItemOps.decrementPlayerHandItem(player, hand);
-                } else {
-                    if (!ItemOps.canStack(playerStack, sideStack)) return ActionResult.PASS;
-
-                    tinkererInventory.set(sideIndex, ItemStack.EMPTY);
-                    tinkerer.markDirty();
-
-                    playerStack.increment(1);
-                }
+                return ActionResult.SUCCESS;
             }
+
+            return tinkerer.onUse(player);
         }
+
+        ItemStack sideStack = tinkererInventory.get(sideIndex);
+        if (sideStack.isEmpty()) return ActionResult.PASS;
+
+        player.setStackInHand(Hand.MAIN_HAND, sideStack);
+
+        tinkererInventory.set(sideIndex, ItemStack.EMPTY);
+        tinkerer.markDirty();
+
         return ActionResult.SUCCESS;
     }
 

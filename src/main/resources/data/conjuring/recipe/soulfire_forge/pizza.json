@@ -1,0 +1,27 @@
+{
+  "type": "conjuring:soulfire_forge",
+  "pattern": [
+    "kek",
+    "epe",
+    "bbb"
+  ],
+  "key": {
+    "e": {
+      "item": "minecraft:sweet_berries"
+    },
+    "p": {
+      "item": "minecraft:cooked_porkchop"
+    },
+    "b": {
+      "item": "minecraft:bread"
+    },
+    "k": {
+      "item": "minecraft:dried_kelp"
+    }
+  },
+  "smeltTime": 120,
+  "result": {
+    "id": "conjuring:pizza",
+    "count": 1
+  }
+}

@@ -34,7 +34,7 @@ public class TestInteractionHelper {
 
     public void clickBlock(BlockPos relativePos, boolean sneaking) {
         this.player.setSneaking(sneaking);
-        this.ctx.getBlockState(relativePos).onUse(this.ctx.getWorld(), this.player, Hand.MAIN_HAND, createHitResult(relativePos));
+        this.ctx.getBlockState(relativePos).onUse(this.ctx.getWorld(), this.player, createHitResult(relativePos));
     }
 
     public void interactItemAtBlock(BlockPos relativePos, boolean sneaking) {

@@ -5,6 +5,7 @@ import com.glisco.conjuring.blocks.BlackstonePedestalBlockEntity;
 import com.glisco.conjuring.blocks.ConjuringBlocks;
 import com.glisco.conjuring.blocks.RitualCore;
 import com.glisco.conjuring.util.ConjuringParticleEvents;
+import com.glisco.conjuring.util.ListRecipeInput;
 import io.wispforest.owo.blockentity.LinearProcess;
 import io.wispforest.owo.blockentity.LinearProcessExecutor;
 import io.wispforest.owo.ops.ItemOps;
@@ -31,11 +32,13 @@ import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.ItemScatterer;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -72,26 +75,26 @@ public class SoulWeaverBlockEntity extends BlockEntity implements RitualCore {
     }
 
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
+    public void readNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
+        super.readNbt(tag, registries);
         loadPedestals(tag, pedestals);
         ritualExecutor.readState(tag);
 
-        this.item = ItemOps.get(tag, "Item");
+        this.item = ItemOps.get(registries, tag, "Item");
         if (tag.contains("CachedRecipe", NbtElement.STRING_TYPE) && world != null) {
             //noinspection unchecked
-            this.cachedRecipe = (RecipeEntry<SoulWeaverRecipe>) world.getRecipeManager().get(new Identifier(tag.getString("CachedRecipe"))).orElse(null);
+            this.cachedRecipe = (RecipeEntry<SoulWeaverRecipe>) world.getRecipeManager().get(Identifier.of(tag.getString("CachedRecipe"))).orElse(null);
         }
 
         lit = tag.getBoolean("Lit");
     }
 
     @Override
-    public void writeNbt(NbtCompound tag) {
+    public void writeNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registries) {
         savePedestals(tag, pedestals);
         ritualExecutor.writeState(tag);
 
-        ItemOps.store(item, tag, "Item");
+        ItemOps.store(registries, item, tag, "Item");
         if (cachedRecipe != null) tag.putString("CachedRecipe", cachedRecipe.id().toString());
 
         tag.putBoolean("Lit", lit);
@@ -156,18 +159,18 @@ public class SoulWeaverBlockEntity extends BlockEntity implements RitualCore {
 
         if (item.isEmpty()) return false;
 
-        Inventory testInventory = new SimpleInventory(5);
-        testInventory.setStack(0, item);
+        var testInventory = DefaultedList.ofSize(5, ItemStack.EMPTY);
+        testInventory.set(0, item);
 
         int index = 1;
         for (BlockPos pedestal : pedestals) {
             BlackstonePedestalBlockEntity entity = (BlackstonePedestalBlockEntity) world.getBlockEntity(pedestal);
             if (entity.getItem().isEmpty()) return false;
-            testInventory.setStack(index, entity.getItem());
+            testInventory.set(index, entity.getItem());
             index++;
         }
 
-        var recipeOptional = world.getRecipeManager().getFirstMatch(SoulWeaverRecipe.Type.INSTANCE, testInventory, world);
+        var recipeOptional = world.getRecipeManager().getFirstMatch(SoulWeaverRecipe.Type.INSTANCE, new ListRecipeInput(testInventory), world);
         if (recipeOptional.isEmpty()) {
             this.cachedRecipe = null;
             return false;
@@ -208,9 +211,9 @@ public class SoulWeaverBlockEntity extends BlockEntity implements RitualCore {
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt() {
+    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registries) {
         var tag = new NbtCompound();
-        this.writeNbt(tag);
+        this.writeNbt(tag, registries);
         return tag;
     }
 
@@ -283,7 +286,7 @@ public class SoulWeaverBlockEntity extends BlockEntity implements RitualCore {
 
         PROCESS.whenFinishedClient((executor, weaver) -> {
             try {
-                MinecraftClient.getInstance().getSoundManager().stopSounds(new Identifier("minecraft", "block.beacon.ambient"), SoundCategory.BLOCKS);
+                MinecraftClient.getInstance().getSoundManager().stopSounds(Identifier.of("minecraft", "block.beacon.ambient"), SoundCategory.BLOCKS);
             } catch (Exception ignored) {
             }
 
@@ -322,7 +325,7 @@ public class SoulWeaverBlockEntity extends BlockEntity implements RitualCore {
             if (cachedRecipe != null) {
                 if (cachedRecipe.value().transferTag) {
                     ItemStack output = cachedRecipe.value().getResult(null);
-                    output.setNbt(weaver.getItem().getOrCreateNbt());
+                    output.applyComponentsFrom(weaver.getItem().getComponents());
                     weaver.setItem(output);
                 } else {
                     weaver.setItem(cachedRecipe.value().getResult(null));
@@ -345,7 +348,7 @@ public class SoulWeaverBlockEntity extends BlockEntity implements RitualCore {
                     new ParticleS2CPacket(ParticleTypes.LARGE_SMOKE, false, pos.getX() + 0.5, pos.getY() + 1.15, pos.getZ() + 0.5, 0.15f, 0.15f, 0.15f, 0.05f, 15));
 
             ((ServerWorld) world).getServer().getPlayerManager().sendToAround(null, pos.getX(), pos.getY(), pos.getZ(), 25, world.getRegistryKey(),
-                    new StopSoundS2CPacket(new Identifier("minecraft", "block.beacon.ambient"), SoundCategory.BLOCKS));
+                    new StopSoundS2CPacket(Identifier.of("minecraft", "block.beacon.ambient"), SoundCategory.BLOCKS));
 
             world.playSound(null, pos, SoundEvents.ENTITY_WITHER_HURT, SoundCategory.BLOCKS, 1f, 0f);
 

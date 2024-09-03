@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "l",
+    "s"
+  ],
+  "key": {
+    "l": {
+      "item": "conjuring:ignorance_gem"
+    },
+    "s": {
+      "item": "conjuring:gem_socket"
+    }
+  },
+  "result": {
+    "id": "conjuring:ignorance_charm",
+    "count": 1
+  }
+}
