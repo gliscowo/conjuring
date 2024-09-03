@@ -2,7 +2,7 @@
   "parent": "conjuring:conjuring_scepter",
   "display": {
     "icon": {
-      "item": "conjuring:superior_conjuring_scepter"
+      "id": "conjuring:superior_conjuring_scepter"
     },
     "title": {
       "translate": "advancement.conjuring.superior_conjuring_scepter.title"

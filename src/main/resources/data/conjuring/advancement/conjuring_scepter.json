@@ -2,7 +2,7 @@
   "parent": "conjuring:soulfire_forge",
   "display": {
     "icon": {
-      "item": "conjuring:conjuring_scepter"
+      "id": "conjuring:conjuring_scepter"
     },
     "title": {
       "translate": "advancement.conjuring.conjuring_scepter.title"

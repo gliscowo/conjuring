@@ -2,7 +2,7 @@
   "parent": "conjuring:soul_weaver",
   "display": {
     "icon": {
-      "item": "conjuring:soul_alloy_scythe"
+      "id": "conjuring:soul_alloy_scythe"
     },
     "title": {
       "translate": "advancement.conjuring.soul_alloy_scythe.title"

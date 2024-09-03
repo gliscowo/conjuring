@@ -2,7 +2,7 @@
   "parent": "conjuring:soulfire_forge",
   "display": {
     "icon": {
-      "item": "conjuring:soul_alloy"
+      "id": "conjuring:soul_alloy"
     },
     "title": {
       "translate": "advancement.conjuring.soul_alloy.title"

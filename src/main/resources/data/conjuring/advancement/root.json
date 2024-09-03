@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "conjuring:conjuration_essence"
+      "id": "conjuring:conjuration_essence"
     },
     "title": {
       "translate": "advancement.conjuring.root.title"

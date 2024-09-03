@@ -2,7 +2,7 @@
   "parent": "conjuring:conjuring_scepter",
   "display": {
     "icon": {
-      "item": "conjuring:soul_funnel"
+      "id": "conjuring:soul_funnel"
     },
     "title": {
       "translate": "advancement.conjuring.soul_funnel.title"

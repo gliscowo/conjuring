@@ -2,7 +2,7 @@
   "parent": "conjuring:soul_alloy_tools",
   "display": {
     "icon": {
-      "item": "conjuring:gem_tinkerer"
+      "id": "conjuring:gem_tinkerer"
     },
     "title": {
       "translate": "advancement.conjuring.gem_tinkerer.title"

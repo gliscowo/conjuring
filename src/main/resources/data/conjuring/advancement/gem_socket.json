@@ -2,7 +2,7 @@
   "parent": "conjuring:soul_alloy",
   "display": {
     "icon": {
-      "item": "conjuring:gem_socket"
+      "id": "conjuring:gem_socket"
     },
     "title": {
       "translate": "advancement.conjuring.gem_socket.title"

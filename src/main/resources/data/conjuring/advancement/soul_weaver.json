@@ -2,7 +2,7 @@
   "parent": "conjuring:soul_alloy",
   "display": {
     "icon": {
-      "item": "conjuring:soul_weaver"
+      "id": "conjuring:soul_weaver"
     },
     "title": {
       "translate": "advancement.conjuring.soul_weaver.title"

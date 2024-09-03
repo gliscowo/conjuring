@@ -2,7 +2,7 @@
   "parent": "conjuring:root",
   "display": {
     "icon": {
-      "item": "conjuring:soulfire_forge"
+      "id": "conjuring:soulfire_forge"
     },
     "title": {
       "translate": "advancement.conjuring.soulfire_forge.title"

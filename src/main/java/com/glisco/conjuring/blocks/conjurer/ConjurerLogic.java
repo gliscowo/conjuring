@@ -62,9 +62,9 @@ public abstract class ConjurerLogic {
         this.getSpawnEntry(world, random, pos).getNbt().putString("id", Registries.ENTITY_TYPE.getId(type).toString());
     }
 
-    // This method is made public
+    // This method is made public and tweaked to respect stabilized foci and redstone
     public boolean isPlayerInRange(World world, BlockPos pos) {
-        return world.isPlayerInRange((double)pos.getX() + 0.5, (double)pos.getY() + 0.5, (double)pos.getZ() + 0.5, (double)this.requiredPlayerRange);
+        return world.getReceivedRedstonePower(pos) == 0 && (!requiresPlayer || world.isPlayerInRange((double) pos.getX() + 0.5, (double) pos.getY() + 0.5, (double) pos.getZ() + 0.5, (double) this.requiredPlayerRange));
     }
 
     public void clientTick(World world, BlockPos pos) {
